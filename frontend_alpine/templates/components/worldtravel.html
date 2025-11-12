@@ -1,0 +1,498 @@
+<!-- WorldTravel View -->
+<div x-show="currentView === 'worldtravel' && user" class="worldtravel-container">
+    
+    <!-- Countries List View -->
+    <div x-show="worldTravelMode === 'countries'" class="worldtravel-view">
+        <!-- Header -->
+        <div class="worldtravel-header">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="worldtravel-icon">🌍</div>
+                <div>
+                    <h1 class="text-3xl font-bold">Country List</h1>
+                    <p class="text-sm text-muted">
+                        <span x-text="filteredCountries.length"></span> of <span x-text="countries.length"></span> countries
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="worldtravel-quick-stats">
+                <div class="stat-box stat-success">
+                    <div class="stat-label">Visited</div>
+                    <div class="stat-value" x-text="visitedCountriesCount"></div>
+                </div>
+                <div class="stat-box stat-error">
+                    <div class="stat-label">Remaining</div>
+                    <div class="stat-value" x-text="notVisitedCountriesCount"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="worldtravel-search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    x-model="worldTravelSearchQuery" 
+                    placeholder="Search countries..."
+                    class="search-input"
+                >
+                <button 
+                    x-show="worldTravelSearchQuery" 
+                    @click="worldTravelSearchQuery = ''" 
+                    class="clear-btn"
+                >
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="worldtravel-filters">
+            <span class="filter-label">Filter by:</span>
+            <div class="filter-tabs">
+                <button 
+                    @click="worldTravelFilterOption = 'all'" 
+                    class="filter-tab"
+                    :class="worldTravelFilterOption === 'all' ? 'active' : ''"
+                >
+                    🌍 All
+                </button>
+                <button 
+                    @click="worldTravelFilterOption = 'complete'" 
+                    class="filter-tab"
+                    :class="worldTravelFilterOption === 'complete' ? 'active' : ''"
+                >
+                    ✓ Complete
+                </button>
+                <button 
+                    @click="worldTravelFilterOption = 'partial'" 
+                    class="filter-tab"
+                    :class="worldTravelFilterOption === 'partial' ? 'active' : ''"
+                >
+                    📊 Partial
+                </button>
+                <button 
+                    @click="worldTravelFilterOption = 'not'" 
+                    class="filter-tab"
+                    :class="worldTravelFilterOption === 'not' ? 'active' : ''"
+                >
+                    ✗ Not Visited
+                </button>
+            </div>
+
+            <!-- Subregion Filter -->
+            <template x-if="worldSubregionFilter">
+                <div class="active-filter-badge">
+                    <span x-text="worldSubregionFilter"></span>
+                    <button @click="worldSubregionFilter = ''">✕</button>
+                </div>
+            </template>
+
+            <!-- Clear Filters -->
+            <template x-if="worldTravelSearchQuery || worldTravelFilterOption !== 'all' || worldSubregionFilter">
+                <button @click="clearWorldTravelFilters()" class="clear-filters-btn">
+                    ✕ Clear All
+                </button>
+            </template>
+        </div>
+
+        <!-- Countries Grid -->
+        <template x-if="filteredCountries.length === 0">
+            <div class="worldtravel-empty-state">
+                <div class="empty-icon">🌍</div>
+                <h3>No countries found</h3>
+                <p>Try adjusting your search or filters</p>
+                <button @click="clearWorldTravelFilters()" class="btn btn-primary">
+                    Clear Filters
+                </button>
+            </div>
+        </template>
+
+        <template x-if="filteredCountries.length > 0">
+            <div class="worldtravel-grid">
+                <template x-for="country in filteredCountries" :key="country.id">
+                    <div class="country-card" @click="viewCountryDetails(country)">
+                        <div class="country-flag">
+                            <img 
+                                :src="`https://flagpedia.net/data/flags/w580/${country.country_code.toLowerCase()}.webp`" 
+                                :alt="country.name + ' flag'"
+                                @error="$event.target.style.display='none'"
+                            >
+                        </div>
+                        <div class="country-info">
+                            <h3 x-text="country.name"></h3>
+                            <p class="country-meta">
+                                <span x-text="country.country_code"></span>
+                                <template x-if="country.capital">
+                                    <span> • <span x-text="country.capital"></span></span>
+                                </template>
+                            </p>
+                            <div class="country-stats">
+                                <span class="stat-badge" x-text="country.num_regions + ' regions'"></span>
+                                <template x-if="country.num_visits > 0">
+                                    <span class="stat-badge stat-visited" x-text="country.num_visits + ' visited'"></span>
+                                </template>
+                                <template x-if="country.num_visits === country.num_regions && country.num_regions > 0">
+                                    <span class="stat-badge stat-complete">✓ Complete</span>
+                                </template>
+                            </div>
+                            <!-- Progress Bar -->
+                            <template x-if="country.num_regions > 0">
+                                <div class="country-progress">
+                                    <div 
+                                        class="country-progress-bar" 
+                                        :style="`width: ${(country.num_visits / country.num_regions * 100)}%`"
+                                        :class="country.num_visits === country.num_regions ? 'complete' : ''"
+                                    ></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Loading State -->
+        <template x-if="countries.length === 0">
+            <div class="worldtravel-loading">
+                <p class="text-muted">Loading countries...</p>
+            </div>
+        </template>
+
+        <!-- Sidebar Stats Panel -->
+        <div class="worldtravel-sidebar">
+            <div class="sidebar-section">
+                <h3>🌍 Travel Progress</h3>
+                <div class="sidebar-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Total Countries</span>
+                        <span class="stat-value" x-text="countries.length"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Visited</span>
+                        <span class="stat-value stat-success" x-text="visitedCountriesCount"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Remaining</span>
+                        <span class="stat-value stat-error" x-text="notVisitedCountriesCount"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Complete</span>
+                        <span class="stat-value stat-success" x-text="completeCountriesCount"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Partial</span>
+                        <span class="stat-value stat-warning" x-text="partialCountriesCount"></span>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span>Progress</span>
+                            <span x-text="Math.round((visitedCountriesCount / countries.length * 100)) + '%'"></span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div 
+                                class="progress-bar" 
+                                :style="`width: ${(visitedCountriesCount / countries.length * 100)}%`"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Region Filter -->
+            <div class="sidebar-section">
+                <h3>📍 Filter by Region</h3>
+                <div class="region-filters">
+                    <label class="region-filter-option">
+                        <input 
+                            type="radio" 
+                            name="worldSubregion" 
+                            :checked="worldSubregionFilter === ''" 
+                            @change="worldSubregionFilter = ''"
+                        >
+                        <span>All Regions</span>
+                    </label>
+                    <template x-for="subregion in worldSubregions" :key="subregion">
+                        <label class="region-filter-option">
+                            <input 
+                                type="radio" 
+                                name="worldSubregion" 
+                                :checked="worldSubregionFilter === subregion" 
+                                @change="worldSubregionFilter = subregion"
+                            >
+                            <span x-text="subregion"></span>
+                        </label>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Country Detail View -->
+    <div x-show="worldTravelMode === 'country-detail' && selectedCountry" class="worldtravel-view">
+        <!-- Header -->
+        <div class="worldtravel-header">
+            <button @click="worldTravelMode = 'countries'; selectedCountry = null" class="btn btn-outline mb-4">
+                ← Back to Countries
+            </button>
+
+            <div class="country-detail-header">
+                <div class="country-flag-large">
+                    <img 
+                        :src="`https://flagpedia.net/data/flags/w580/${selectedCountry?.country_code.toLowerCase()}.webp`" 
+                        :alt="selectedCountry?.name + ' flag'"
+                        @error="$event.target.style.display='none'"
+                    >
+                </div>
+                <div class="country-header-info">
+                    <h1 x-text="'Regions in ' + selectedCountry?.name"></h1>
+                    <p class="country-meta">
+                        <span x-text="selectedCountry?.country_code"></span>
+                        <template x-if="selectedCountry?.capital">
+                            <span> • Capital: <span x-text="selectedCountry.capital"></span></span>
+                        </template>
+                        <template x-if="selectedCountry?.subregion">
+                            <span> • <span x-text="selectedCountry.subregion"></span></span>
+                        </template>
+                    </p>
+                    <div class="country-header-stats">
+                        <span class="stat-badge" x-text="countryRegions.length + ' regions'"></span>
+                        <span class="stat-badge stat-visited" x-text="countryVisitedRegions.length + ' visited'"></span>
+                        <template x-if="countryRegions.length > 0 && countryVisitedRegions.length === countryRegions.length">
+                            <span class="stat-badge stat-complete">🏆 Complete!</span>
+                        </template>
+                        <template x-if="countryRegions.length > 0">
+                            <span class="stat-badge" x-text="Math.round((countryVisitedRegions.length / countryRegions.length * 100)) + '% Complete'"></span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="worldtravel-search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    x-model="regionSearchQuery" 
+                    placeholder="Search regions..."
+                    class="search-input"
+                >
+                <button 
+                    x-show="regionSearchQuery" 
+                    @click="regionSearchQuery = ''" 
+                    class="clear-btn"
+                >
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="worldtravel-filters">
+            <span class="filter-label">Filter by:</span>
+            <div class="filter-tabs">
+                <button 
+                    @click="regionFilterOption = 'all'" 
+                    class="filter-tab"
+                    :class="regionFilterOption === 'all' ? 'active' : ''"
+                >
+                    📍 All
+                </button>
+                <button 
+                    @click="regionFilterOption = 'visited'" 
+                    class="filter-tab"
+                    :class="regionFilterOption === 'visited' ? 'active' : ''"
+                >
+                    ✓ Visited
+                </button>
+                <button 
+                    @click="regionFilterOption = 'not-visited'" 
+                    class="filter-tab"
+                    :class="regionFilterOption === 'not-visited' ? 'active' : ''"
+                >
+                    ✗ Not Visited
+                </button>
+            </div>
+
+            <!-- Clear Filters -->
+            <template x-if="regionSearchQuery || regionFilterOption !== 'all'">
+                <button @click="clearRegionFilters()" class="clear-filters-btn">
+                    ✕ Clear All
+                </button>
+            </template>
+        </div>
+
+        <!-- Regions Grid -->
+        <template x-if="filteredRegions.length === 0">
+            <div class="worldtravel-empty-state">
+                <div class="empty-icon">📍</div>
+                <h3>No regions found</h3>
+                <p>Try adjusting your search or filters</p>
+            </div>
+        </template>
+
+        <template x-if="filteredRegions.length > 0">
+            <div class="regions-list">
+                <template x-for="region in filteredRegions" :key="region.id">
+                    <div class="region-card">
+                        <div class="region-info">
+                            <div class="region-header">
+                                <h3 x-text="region.name"></h3>
+                                <template x-if="isRegionVisited(region.id)">
+                                    <span class="stat-badge stat-visited">✓ Visited</span>
+                                </template>
+                            </div>
+                            <p class="region-meta" x-text="region.num_cities + ' cities'"></p>
+                        </div>
+                        <div class="region-actions">
+                            <button 
+                                @click="viewRegionCities(region)" 
+                                class="btn btn-sm btn-outline"
+                            >
+                                View Cities
+                            </button>
+                            <button 
+                                x-show="!isRegionVisited(region.id)"
+                                @click="markRegionVisited(region.id)" 
+                                class="btn btn-sm btn-primary"
+                            >
+                                Mark Visited
+                            </button>
+                            <button 
+                                x-show="isRegionVisited(region.id)"
+                                @click="unmarkRegionVisited(region.id)" 
+                                class="btn btn-sm btn-danger"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Sidebar Stats -->
+        <div class="worldtravel-sidebar">
+            <div class="sidebar-section">
+                <h3>🏳️ <span x-text="selectedCountry?.name"></span></h3>
+                <div class="sidebar-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Total Regions</span>
+                        <span class="stat-value" x-text="countryRegions.length"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Visited</span>
+                        <span class="stat-value stat-success" x-text="countryVisitedRegions.length"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Remaining</span>
+                        <span class="stat-value stat-error" x-text="countryRegions.length - countryVisitedRegions.length"></span>
+                    </div>
+                    <!-- Progress Bar -->
+                    <template x-if="countryRegions.length > 0">
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span>Progress</span>
+                                <span x-text="Math.round((countryVisitedRegions.length / countryRegions.length * 100)) + '%'"></span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div 
+                                    class="progress-bar" 
+                                    :style="`width: ${(countryVisitedRegions.length / countryRegions.length * 100)}%`"
+                                    :class="countryVisitedRegions.length === countryRegions.length ? 'complete' : ''"
+                                ></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="countryRegions.length > 0 && countryVisitedRegions.length === countryRegions.length">
+                        <div class="completion-alert">
+                            🏆 Country Completed! 🎉
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Region Cities View -->
+    <div x-show="worldTravelMode === 'region-cities' && selectedRegion" class="worldtravel-view">
+        <button @click="worldTravelMode = 'country-detail'; selectedRegion = null" class="btn btn-outline mb-4">
+            ← Back to <span x-text="selectedCountry?.name"></span>
+        </button>
+
+        <div class="region-cities-header">
+            <h1 x-text="selectedRegion?.name"></h1>
+            <p class="region-meta">
+                <span x-text="regionCities.length + ' cities'"></span>
+                <span> • </span>
+                <span x-text="regionVisitedCities.length + ' visited'"></span>
+            </p>
+        </div>
+
+        <!-- Cities Search -->
+        <div class="worldtravel-search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    x-model="citySearchQuery" 
+                    placeholder="Search cities..."
+                    class="search-input"
+                >
+                <button 
+                    x-show="citySearchQuery" 
+                    @click="citySearchQuery = ''" 
+                    class="clear-btn"
+                >
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Cities Grid -->
+        <template x-if="filteredCities.length === 0">
+            <div class="worldtravel-empty-state">
+                <div class="empty-icon">🏙️</div>
+                <h3>No cities found</h3>
+                <p>Try adjusting your search</p>
+            </div>
+        </template>
+
+        <template x-if="filteredCities.length > 0">
+            <div class="cities-grid">
+                <template x-for="city in filteredCities" :key="city.id">
+                    <div class="city-card">
+                        <div class="city-info">
+                            <h4 x-text="city.name"></h4>
+                            <template x-if="isCityVisited(city.id)">
+                                <span class="stat-badge stat-visited">✓ Visited</span>
+                            </template>
+                        </div>
+                        <div class="city-actions">
+                            <button 
+                                x-show="!isCityVisited(city.id)"
+                                @click="markCityVisited(city.id)" 
+                                class="btn btn-sm btn-primary"
+                            >
+                                ✓
+                            </button>
+                            <button 
+                                x-show="isCityVisited(city.id)"
+                                @click="unmarkCityVisited(city.id)" 
+                                class="btn btn-sm btn-danger"
+                            >
+                                ✗
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>

@@ -1,0 +1,197 @@
+<!-- Profile View -->
+<div x-show="currentView === 'profile'" x-transition class="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+    <!-- Hero Profile Section -->
+    <div class="relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5"></div>
+
+        <div class="container mx-auto px-6 py-16 relative">
+            <div class="profile-header flex flex-col items-center text-center">
+                <!-- Profile Picture -->
+                <div class="relative mb-6">
+                    <div class="avatar">
+                        <div class="w-32 h-32 rounded-full ring-4 ring-primary ring-offset-4 ring-offset-base-100 shadow-2xl">
+                            <img 
+                                :src="profileUser?.profile_pic || `https://eu.ui-avatars.com/api/?name=${profileUser?.username || 'User'}&size=250&background=random`" 
+                                :alt="profileUser?.username"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Info -->
+                <div class="space-y-4">
+                    <h1 class="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent" 
+                        x-text="profileUser?.first_name && profileUser?.last_name ? profileUser.first_name + ' ' + profileUser.last_name : profileUser?.username">
+                    </h1>
+                    <p class="text-xl text-base-content/70" x-text="'@' + (profileUser?.username || '')"></p>
+
+                    <!-- Member Since -->
+                    <div x-show="profileUser?.date_joined" class="flex items-center justify-center gap-2 text-base-content/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="text-lg" x-text="'Member since ' + (profileUser?.date_joined ? new Date(profileUser.date_joined).toLocaleDateString('en-US', {year: 'numeric', month: 'long'}) : '')"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Stats Section -->
+        <div x-show="profileStats" class="content-section mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2">Travel Statistics</h2>
+                <p class="text-base-content/60">Journey at a glance</p>
+            </div>
+
+            <!-- Primary Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Adventures -->
+                <div class="stat-card card bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl border border-primary/20">
+                    <div class="card-body p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-primary/70 font-medium text-sm uppercase tracking-wide">Locations</div>
+                                <div class="text-4xl font-bold text-primary" x-text="profileStats?.location_count || 0"></div>
+                            </div>
+                            <div class="p-4 bg-primary/20 rounded-2xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collections -->
+                <div class="stat-card card bg-gradient-to-br from-secondary/10 to-secondary/5 shadow-xl border border-secondary/20">
+                    <div class="card-body p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-secondary/70 font-medium text-sm uppercase tracking-wide">Collections</div>
+                                <div class="text-4xl font-bold text-secondary" x-text="profileStats?.trips_count || 0"></div>
+                            </div>
+                            <div class="p-4 bg-secondary/20 rounded-2xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Countries -->
+                <div class="stat-card card bg-gradient-to-br from-success/10 to-success/5 shadow-xl border border-success/20">
+                    <div class="card-body p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="text-success/70 font-medium text-sm uppercase tracking-wide">Visited Countries</div>
+                                <div class="text-4xl font-bold text-success" x-text="profileStats?.visited_country_count || 0"></div>
+                                <div class="text-success/60 mt-2">
+                                    <progress 
+                                        class="progress progress-success w-full h-2" 
+                                        :value="profileStats?.visited_country_count || 0" 
+                                        :max="profileStats?.total_countries || 195"
+                                    ></progress>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-success/20 rounded-2xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adventures Section -->
+        <div class="content-section mb-16">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-primary/10 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold">Locations</h2>
+                        <p class="text-base-content/60">Public location experiences</p>
+                    </div>
+                </div>
+                <div x-show="profileLocations?.length > 0" class="badge badge-primary badge-lg" x-text="(profileLocations?.length || 0) + ' locations'"></div>
+            </div>
+
+            <div x-show="!profileLocations || profileLocations.length === 0" class="card bg-base-100 shadow-xl">
+                <div class="card-body text-center py-16">
+                    <div class="p-6 bg-base-200/50 rounded-2xl w-fit mx-auto mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-base-content/70 mb-2">No Public Locations</h3>
+                    <p class="text-base-content/50">This user hasn't shared any adventures yet</p>
+                </div>
+            </div>
+
+            <div x-show="profileLocations && profileLocations.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <template x-for="location in profileLocations" :key="location.id">
+                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewLocation(location.id)">
+                        <figure x-show="location.featured_image" class="h-48">
+                            <img :src="location.featured_image" :alt="location.name" class="w-full h-full object-cover">
+                        </figure>
+                        <div class="card-body">
+                            <h3 class="card-title" x-text="location.name"></h3>
+                            <p class="text-sm text-base-content/70" x-show="location.location" x-text="location.location"></p>
+                            <div x-show="location.activity_type" class="badge badge-outline" x-text="location.activity_type"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Collections Section -->
+        <div class="content-section">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-secondary/10 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold">Collections</h2>
+                        <p class="text-base-content/60">Planned trips</p>
+                    </div>
+                </div>
+                <div x-show="profileCollections?.length > 0" class="badge badge-secondary badge-lg" x-text="(profileCollections?.length || 0) + ' collections'"></div>
+            </div>
+
+            <div x-show="!profileCollections || profileCollections.length === 0" class="card bg-base-100 shadow-xl">
+                <div class="card-body text-center py-16">
+                    <div class="p-6 bg-base-200/50 rounded-2xl w-fit mx-auto mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-base-content/70 mb-2">No Public Collections</h3>
+                    <p class="text-base-content/50">This user hasn't shared any collections yet</p>
+                </div>
+            </div>
+
+            <div x-show="profileCollections && profileCollections.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <template x-for="collection in profileCollections" :key="collection.id">
+                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewCollection(collection.id)">
+                        <div class="card-body">
+                            <h3 class="card-title" x-text="collection.name"></h3>
+                            <p class="text-sm text-base-content/70" x-show="collection.description" x-text="collection.description"></p>
+                            <div x-show="collection.type" class="badge badge-outline" x-text="collection.type"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>

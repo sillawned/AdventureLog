@@ -1,0 +1,376 @@
+<!-- Locations View -->
+            <div x-show="currentView === 'locations' && user">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex gap-2 items-center">
+                        <h2>Locations</h2>
+                        <div class="flex gap-1" style="margin-left: 1rem;">
+                            <button 
+                                @click="locationsViewMode = 'list'" 
+                                class="btn btn-sm"
+                                :class="locationsViewMode === 'list' ? 'btn-primary' : 'btn-outline'"
+                            >
+                                📋 List
+                            </button>
+                            <button 
+                                @click="locationsViewMode = 'map'; $nextTick(() => initMap())" 
+                                class="btn btn-sm"
+                                :class="locationsViewMode === 'map' ? 'btn-primary' : 'btn-outline'"
+                            >
+                                🗺️ Map
+                            </button>
+                        </div>
+                    </div>
+                    <button @click="showAddLocation = !showAddLocation" class="btn btn-primary">
+                        <span x-show="!showAddLocation">+ Add Location</span>
+                        <span x-show="showAddLocation">Cancel</span>
+                    </button>
+                </div>
+                
+                <!-- Keyboard Shortcut Hint -->
+                <div x-show="!showAddLocation" style="text-align: center; margin-bottom: 1rem; opacity: 0.6; font-size: 0.875rem;">
+                    💡 Tip: Press <kbd style="padding: 0.125rem 0.375rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.25rem; font-family: monospace;">Ctrl+N</kbd> (or <kbd style="padding: 0.125rem 0.375rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.25rem; font-family: monospace;">⌘N</kbd> on Mac) to quickly add a location
+                </div>
+
+                <!-- Add/Edit Location Form -->
+                <div x-show="showAddLocation" class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 x-text="editingLocationId ? 'Edit Location' : 'Add New Location'"></h3>
+                        <button type="button" @click="cancelEdit()" class="btn btn-outline">Cancel</button>
+                    </div>
+                    <form @submit.prevent="editingLocationId ? updateLocation() : createLocation()">
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input 
+                                type="text" 
+                                x-model="locationForm.name" 
+                                @input="clearValidationError('name')"
+                                :class="validationErrors.name ? 'input-error' : ''"
+                                required
+                            >
+                            <span x-show="validationErrors.name" class="error-text" x-text="validationErrors.name"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea x-model="locationForm.description" rows="3" placeholder="Describe this location..."></textarea>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" x-model="locationForm.city">
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" x-model="locationForm.country">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input 
+                                type="text" 
+                                x-model="locationForm.address"
+                                @input.debounce.500ms="searchAddress($event.target.value)"
+                                @focus="if (locationForm.address && addressSuggestions.length > 0) showAddressSuggestions = true"
+                                placeholder="Start typing an address..."
+                            >
+                            <!-- Address Suggestions -->
+                            <div 
+                                x-show="showAddressSuggestions && addressSuggestions.length > 0" 
+                                @click.away="showAddressSuggestions = false"
+                                style="position: relative; margin-top: 0.5rem;"
+                            >
+                                <div style="position: absolute; z-index: 50; width: 100%; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 300px; overflow-y: auto;">
+                                    <template x-for="(suggestion, index) in addressSuggestions" :key="index">
+                                        <button 
+                                            type="button" 
+                                            @click="selectAddress(suggestion)"
+                                            style="width: 100%; text-align: left; padding: 0.75rem 1rem; border: none; background: transparent; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.2s;"
+                                            @mouseenter="$el.style.background = 'var(--hover-bg)'"
+                                            @mouseleave="$el.style.background = 'transparent'"
+                                        >
+                                            <div style="display: flex; align-items: start; gap: 0.5rem;">
+                                                <span style="font-size: 1.25rem; flex-shrink: 0;">📍</span>
+                                                <div>
+                                                    <div x-text="suggestion.display" style="font-size: 0.875rem; color: var(--text-primary);"></div>
+                                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                                        <span x-text="'Lat: ' + suggestion.lat.toFixed(4)"></span>,
+                                                        <span x-text="'Lon: ' + suggestion.lon.toFixed(4)"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label>Latitude</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input 
+                                        type="number" 
+                                        step="any" 
+                                        x-model="locationForm.latitude" 
+                                        @input="clearValidationError('latitude')"
+                                        :class="validationErrors.latitude ? 'input-error' : ''"
+                                        style="flex: 1;"
+                                        placeholder="-90 to 90"
+                                    >
+                                    <button 
+                                        type="button" 
+                                        @click="getCurrentLocation()" 
+                                        class="btn btn-sm"
+                                        :disabled="gettingLocation"
+                                        style="white-space: nowrap;"
+                                    >
+                                        <span x-show="!gettingLocation">📍 Use My Location</span>
+                                        <span x-show="gettingLocation">🔄 Getting...</span>
+                                    </button>
+                                </div>
+                                <span x-show="validationErrors.latitude" class="error-text" x-text="validationErrors.latitude"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Longitude</label>
+                                <input 
+                                    type="number" 
+                                    step="any" 
+                                    x-model="locationForm.longitude" 
+                                    @input="clearValidationError('longitude')"
+                                    :class="validationErrors.longitude ? 'input-error' : ''"
+                                    placeholder="-180 to 180"
+                                >
+                                <span x-show="validationErrors.longitude" class="error-text" x-text="validationErrors.longitude"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select x-model="locationForm.category">
+                                <option value="">No category</option>
+                                <template x-for="cat in categories" :key="cat.id">
+                                    <option :value="cat.id" x-text="(cat.icon || '') + ' ' + cat.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Collection</label>
+                            <select x-model="locationForm.collection">
+                                <option value="">No collection</option>
+                                <template x-for="col in collections" :key="col.id">
+                                    <option :value="col.id" x-text="col.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Rating</label>
+                            <select 
+                                x-model="locationForm.rating"
+                                @change="clearValidationError('rating')"
+                                :class="validationErrors.rating ? 'input-error' : ''"
+                            >
+                                <option value="">No rating</option>
+                                <option value="1">⭐ 1</option>
+                                <option value="2">⭐⭐ 2</option>
+                                <option value="3">⭐⭐⭐ 3</option>
+                                <option value="4">⭐⭐⭐⭐ 4</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                            </select>
+                            <span x-show="validationErrors.rating" class="error-text" x-text="validationErrors.rating"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Tags (comma-separated)</label>
+                            <input 
+                                type="text" 
+                                x-model="locationForm.tags" 
+                                @focus="showTagSuggestions = true"
+                                @input="showTagSuggestions = true"
+                                placeholder="beach, tropical, vacation"
+                            >
+                            <!-- Tag Suggestions -->
+                            <div 
+                                x-show="showTagSuggestions && tagSuggestions.length > 0" 
+                                @click.away="showTagSuggestions = false"
+                                style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"
+                            >
+                                <template x-for="tag in tagSuggestions.slice(0, 10)" :key="tag">
+                                    <button 
+                                        type="button" 
+                                        @click="addTagSuggestion(tag)"
+                                        class="btn btn-sm btn-outline"
+                                        style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                                        x-text="'🏷️ ' + tag"
+                                    ></button>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" x-model="locationForm.is_public" id="loc-public">
+                                <label for="loc-public">Make public</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>External Link</label>
+                            <input type="url" x-model="locationForm.link" placeholder="https://example.com/info">
+                        </div>
+                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                            <span x-show="!loading && !editingLocationId">Create Location</span>
+                            <span x-show="!loading && editingLocationId">Save Changes</span>
+                            <span x-show="loading && !editingLocationId">Creating...</span>
+                            <span x-show="loading && editingLocationId">Saving...</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Search & Filter Bar -->
+                <div class="card mb-4" x-show="!showAddLocation">
+                    <div class="grid grid-2 gap-4 mb-4">
+                        <!-- Search -->
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <input 
+                                type="text" 
+                                x-model="searchQuery" 
+                                placeholder="🔍 Search by name, city, country, or tags..."
+                                class="w-full"
+                            >
+                        </div>
+                        
+                        <!-- Sort -->
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select x-model="sortBy" class="w-full">
+                                <option value="name">Sort by Name (A-Z)</option>
+                                <option value="rating-high">Sort by Rating (High-Low)</option>
+                                <option value="rating-low">Sort by Rating (Low-High)</option>
+                                <option value="date-new">Sort by Date (Newest)</option>
+                                <option value="date-old">Sort by Date (Oldest)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-3 gap-4">
+                        <!-- Category Filter -->
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select x-model="filterCategory">
+                                <option value="">All Categories</option>
+                                <template x-for="cat in categories" :key="cat.id">
+                                    <option :value="cat.id" x-text="cat.icon + ' ' + cat.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <!-- Collection Filter -->
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select x-model="filterCollection">
+                                <option value="">All Collections</option>
+                                <template x-for="col in collections" :key="col.id">
+                                    <option :value="col.id" x-text="col.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <!-- Rating Filter -->
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select x-model="filterRating">
+                                <option value="">All Ratings</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 5+</option>
+                                <option value="4">⭐⭐⭐⭐ 4+</option>
+                                <option value="3">⭐⭐⭐ 3+</option>
+                                <option value="2">⭐⭐ 2+</option>
+                                <option value="1">⭐ 1+</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-4">
+                        <p class="text-sm text-muted">
+                            Showing <strong x-text="filteredLocations.length"></strong> of <strong x-text="locations.length"></strong> locations
+                        </p>
+                        <button 
+                            @click="clearFilters()" 
+                            class="btn btn-sm btn-outline"
+                            x-show="searchQuery || filterCategory || filterCollection || filterRating || sortBy !== 'name'"
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Map View -->
+                <div x-show="locationsViewMode === 'map' && !showAddLocation" class="card" style="padding: 0; overflow: hidden;">
+                    <div id="locations-map" style="height: 600px; width: 100%;"></div>
+                </div>
+
+                <!-- Locations List -->
+                <div x-show="locationsViewMode === 'list' && !showAddLocation">
+                    <div class="grid grid-3">
+                        <template x-for="location in paginatedLocations" :key="location.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 x-text="location.name"></h4>
+                                        <p class="text-sm text-muted">
+                                            <span x-text="location.city"></span><span x-show="location.city && location.country">, </span><span x-text="location.country"></span>
+                                        </p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button @click="viewLocation(location)" class="btn btn-sm btn-outline">View</button>
+                                        <button @click="deleteLocation(location.id)" class="btn btn-sm btn-danger">Delete</button>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mb-2" x-show="location.category || location.collection">
+                                    <span x-show="location.category" class="badge" x-text="location.category?.name" :style="'background-color: ' + (location.category?.color || '#6c757d')"></span>
+                                    <span x-show="location.collection" class="badge badge-secondary" x-text="location.collection?.name"></span>
+                                </div>
+                                <div x-show="location.rating" class="text-sm mb-2">
+                                    <span x-text="'⭐'.repeat(location.rating)"></span>
+                                </div>
+                                <div x-show="location.tags && location.tags.length" class="flex flex-wrap gap-1">
+                                    <template x-for="tag in location.tags" :key="tag">
+                                        <span class="badge" x-text="tag"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <template x-if="filteredLocations.length === 0 && locations.length > 0">
+                            <div class="card text-center" style="grid-column: 1 / -1;">
+                                <p class="text-muted">No locations match your filters. Try adjusting your search criteria.</p>
+                            </div>
+                        </template>
+                        
+                        <template x-if="locations.length === 0 && !showAddLocation">
+                            <div class="card text-center" style="grid-column: 1 / -1;">
+                                <p class="text-muted">No locations yet. Create your first one!</p>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div x-show="totalPages > 1" class="flex justify-center items-center gap-2 mt-4">
+                        <button 
+                            @click="changePage(currentPage - 1)" 
+                            :disabled="currentPage === 1"
+                            class="btn btn-sm btn-outline"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+                        >
+                            ← Previous
+                        </button>
+                        
+                        <template x-for="page in pageNumbers" :key="page">
+                            <button 
+                                @click="changePage(page)" 
+                                class="btn btn-sm"
+                                :class="page === currentPage ? 'btn-primary' : 'btn-outline'"
+                                x-text="page"
+                            ></button>
+                        </template>
+                        
+                        <button 
+                            @click="changePage(currentPage + 1)" 
+                            :disabled="currentPage === totalPages"
+                            class="btn btn-sm btn-outline"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+                        >
+                            Next →
+                        </button>
+                    </div>
+                </div>
+            </div>

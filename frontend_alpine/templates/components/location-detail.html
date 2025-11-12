@@ -1,0 +1,419 @@
+<!-- Location Detail View -->
+            <div x-show="currentView === 'location-detail' && selectedLocation">
+                <button @click="currentView = 'locations'" class="btn btn-outline mb-4">← Back to Locations</button>
+                
+                <div class="card">
+                    <div class="location-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+                        <div>
+                            <h2 x-text="selectedLocation?.name"></h2>
+                            <p class="text-muted">
+                                <span x-text="selectedLocation?.city"></span><span x-show="selectedLocation?.city && selectedLocation?.country">, </span><span x-text="selectedLocation?.country"></span>
+                            </p>
+                            <div x-show="selectedLocation?.rating" style="margin-top: 0.5rem;">
+                                <span x-text="'⭐'.repeat(selectedLocation?.rating || 0)"></span>
+                            </div>
+                            <p x-show="selectedLocation?.description" style="margin-top: 0.75rem; white-space: pre-wrap;" x-text="selectedLocation?.description"></p>
+                            <p x-show="selectedLocation?.link" class="text-sm" style="margin-top: 0.5rem;">
+                                🔗 <a :href="selectedLocation?.link" target="_blank" rel="noopener" style="color: var(--link);">External Link</a>
+                            </p>
+                        </div>
+                        <button @click="startEditLocation()" class="btn btn-primary">✏️ Edit</button>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <div class="tab" :class="{ 'active': locationTab === 'notes' }" @click="locationTab = 'notes'; if(selectedLocation) fetchLocationNotes(selectedLocation.id);">Notes</div>
+                        <div class="tab" :class="{ 'active': locationTab === 'visits' }" @click="locationTab = 'visits'; if(selectedLocation) fetchLocationVisits(selectedLocation.id);">Visits</div>
+                        <div class="tab" :class="{ 'active': locationTab === 'activities' }" @click="locationTab = 'activities'; if(selectedLocation) fetchLocationActivities(selectedLocation.id);">Activities</div>
+                        <div class="tab" :class="{ 'active': locationTab === 'checklists' }" @click="locationTab = 'checklists'; if(selectedLocation) fetchLocationChecklists(selectedLocation.id);">Checklists</div>
+                        <div class="tab" :class="{ 'active': locationTab === 'transportation' }" @click="locationTab = 'transportation'; if(selectedLocation) fetchLocationTransportation(selectedLocation.id);">Transportation</div>
+                        <div class="tab" :class="{ 'active': locationTab === 'lodging' }" @click="locationTab = 'lodging'; if(selectedLocation) fetchLocationLodging(selectedLocation.id);">Lodging</div>
+                        <div class="tab" :class="{ 'active': locationTab === 'trails' }" @click="locationTab = 'trails'; if(selectedLocation) fetchLocationTrails(selectedLocation.id);">Trails</div>
+                    </div>
+
+                    <!-- Notes Tab -->
+                    <div x-show="locationTab === 'notes'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Notes</h3>
+                            <button @click="showAddNote = !showAddNote" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddNote">+ Add Note</span>
+                                <span x-show="showAddNote">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddNote" class="card">
+                            <form @submit.prevent="createNote()">
+                                <div class="form-group">
+                                    <label>Title</label>
+                                    <input type="text" x-model="noteForm.name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Content</label>
+                                    <textarea x-model="noteForm.content"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Note</button>
+                            </form>
+                        </div>
+
+                        <template x-for="note in locationNotes" :key="note.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 x-text="note.name"></h4>
+                                        <p x-text="note.content" style="white-space: pre-wrap;"></p>
+                                    </div>
+                                    <button @click="deleteNote(note.id)" class="btn btn-sm btn-danger">Delete</button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationNotes.length === 0" class="text-muted">No notes yet.</p>
+                    </div>
+
+                    <!-- Visits Tab -->
+                    <div x-show="locationTab === 'visits'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Visits</h3>
+                            <button @click="showAddVisit = !showAddVisit" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddVisit">+ Add Visit</span>
+                                <span x-show="showAddVisit">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddVisit" class="card">
+                            <form @submit.prevent="createVisit()">
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" x-model="visitForm.start_date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>End Date (optional)</label>
+                                    <input type="date" x-model="visitForm.end_date">
+                                </div>
+                                <div class="form-group">
+                                    <label>Timezone (e.g., Europe/Paris)</label>
+                                    <input type="text" x-model="visitForm.timezone" placeholder="Optional timezone">
+                                </div>
+                                <div class="form-group">
+                                    <label>Notes</label>
+                                    <textarea x-model="visitForm.notes" rows="3" placeholder="Optional visit notes"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Visit</button>
+                            </form>
+                        </div>
+                        
+                        <template x-for="visit in locationVisits" :key="visit.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="flex gap-2 items-center">
+                                            <span x-text="visit.start_date ? new Date(visit.start_date + 'T00:00:00').toLocaleDateString() : 'No date'"></span>
+                                            <span x-show="visit.end_date">→</span>
+                                            <span x-show="visit.end_date" x-text="visit.end_date ? new Date(visit.end_date + 'T00:00:00').toLocaleDateString() : ''"></span>
+                                        </div>
+                                    </div>
+                                    <button @click="deleteVisit(visit.id)" class="btn btn-sm btn-danger">Delete</button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationVisits.length === 0" class="text-muted">No visits recorded yet.</p>
+                    </div>
+
+                    <!-- Activities Tab -->
+                    <div x-show="locationTab === 'activities'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Activities</h3>
+                            <button @click="showAddActivity = !showAddActivity" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddActivity">+ Add Activity</span>
+                                <span x-show="showAddActivity">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddActivity" class="card">
+                            <form @submit.prevent="createActivity()">
+                                <div class="form-group">
+                                    <label>Type</label>
+                                    <input type="text" x-model="activityForm.type" placeholder="Hiking, Swimming, etc." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Date</label>
+                                    <input type="date" x-model="activityForm.date">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Activity</button>
+                            </form>
+                        </div>
+
+                        <template x-for="activity in locationActivities" :key="activity.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 x-text="activity.type"></h4>
+                                        <p class="text-sm text-muted" x-show="activity.date" x-text="new Date(activity.date).toLocaleDateString()"></p>
+                                    </div>
+                                    <button @click="deleteActivity(activity.id)" class="btn btn-sm btn-danger">Delete</button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationActivities.length === 0" class="text-muted">No activities yet.</p>
+                    </div>
+
+                    <!-- Checklists Tab -->
+                    <div x-show="locationTab === 'checklists'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Checklists</h3>
+                            <button @click="showAddChecklist = !showAddChecklist" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddChecklist">+ Add Checklist</span>
+                                <span x-show="showAddChecklist">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddChecklist" class="card">
+                            <form @submit.prevent="createChecklist()">
+                                <div class="form-group">
+                                    <label>Checklist Name</label>
+                                    <input type="text" x-model="checklistForm.name" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Create Checklist</button>
+                            </form>
+                        </div>
+
+                        <template x-for="checklist in locationChecklists" :key="checklist.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h4 x-text="checklist.name"></h4>
+                                    <div class="flex gap-2">
+                                        <button @click="showAddChecklistItem[checklist.id] = !showAddChecklistItem[checklist.id]" class="btn btn-sm btn-outline">+ Item</button>
+                                        <button @click="deleteChecklist(checklist.id)" class="btn btn-sm btn-danger">Delete</button>
+                                    </div>
+                                </div>
+                                
+                                <div x-show="showAddChecklistItem[checklist.id]" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg); border-radius: 0.375rem;">
+                                    <form @submit.prevent="createChecklistItem(checklist.id)">
+                                        <div class="form-group" style="margin-bottom: 0.5rem;">
+                                            <input type="text" x-model="checklistItemForm.name" placeholder="Item name" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary">Add Item</button>
+                                    </form>
+                                </div>
+
+                                <div>
+                                    <template x-for="item in checklist.items" :key="item.id">
+                                        <div class="checklist-item">
+                                            <input type="checkbox" :checked="item.is_checked" @change="toggleChecklistItem(item.id, !item.is_checked)">
+                                            <span :style="item.is_checked ? 'text-decoration: line-through; color: var(--text-light);' : ''" x-text="item.name"></span>
+                                            <button @click="deleteChecklistItem(item.id)" class="btn btn-sm btn-danger" style="margin-left: auto;">Delete</button>
+                                        </div>
+                                    </template>
+                                    <p x-show="!checklist.items || checklist.items.length === 0" class="text-muted text-sm">No items yet.</p>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationChecklists.length === 0" class="text-muted">No checklists yet.</p>
+                    </div>
+
+                    <!-- Transportation Tab -->
+                    <div x-show="locationTab === 'transportation'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Transportation</h3>
+                            <button @click="showAddTransportation = !showAddTransportation" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddTransportation">+ Add Transportation</span>
+                                <span x-show="showAddTransportation">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddTransportation" class="card">
+                            <form @submit.prevent="createTransportation()">
+                                <div class="form-group">
+                                    <label>Type</label>
+                                    <select x-model="transportationForm.type" required>
+                                        <option value="">Select type</option>
+                                        <option value="plane">✈️ Plane</option>
+                                        <option value="train">🚂 Train</option>
+                                        <option value="bus">🚌 Bus</option>
+                                        <option value="car">🚗 Car</option>
+                                        <option value="boat">🚢 Boat</option>
+                                        <option value="bike">🚴 Bike</option>
+                                        <option value="walk">🚶 Walk</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>From</label>
+                                    <input type="text" x-model="transportationForm.from_location">
+                                </div>
+                                <div class="form-group">
+                                    <label>To</label>
+                                    <input type="text" x-model="transportationForm.to_location">
+                                </div>
+                                <div class="grid grid-2">
+                                    <div class="form-group">
+                                        <label>Departure Time</label>
+                                        <input type="datetime-local" x-model="transportationForm.depart_time">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Arrival Time</label>
+                                        <input type="datetime-local" x-model="transportationForm.arrive_time">
+                                    </div>
+                                </div>
+                                <div class="grid grid-2">
+                                    <div class="form-group">
+                                        <label>Departure Timezone</label>
+                                        <input type="text" x-model="transportationForm.depart_timezone" placeholder="e.g., America/New_York">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Arrival Timezone</label>
+                                        <input type="text" x-model="transportationForm.arrive_timezone" placeholder="e.g., Europe/London">
+                                    </div>
+                                </div>
+                                <div class="grid grid-2">
+                                    <div class="form-group">
+                                        <label>Depart Latitude</label>
+                                        <input type="number" step="any" x-model="transportationForm.depart_latitude">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Depart Longitude</label>
+                                        <input type="number" step="any" x-model="transportationForm.depart_longitude">
+                                    </div>
+                                </div>
+                                <div class="grid grid-2">
+                                    <div class="form-group">
+                                        <label>Arrive Latitude</label>
+                                        <input type="number" step="any" x-model="transportationForm.arrive_latitude">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Arrive Longitude</label>
+                                        <input type="number" step="any" x-model="transportationForm.arrive_longitude">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>External Link</label>
+                                    <input type="url" x-model="transportationForm.link" placeholder="Ticket link or reference">
+                                </div>
+                                <div class="form-group">
+                                    <label>Rating</label>
+                                    <select x-model="transportationForm.rating">
+                                        <option value="">No rating</option>
+                                        <option value="1">⭐ 1</option>
+                                        <option value="2">⭐⭐ 2</option>
+                                        <option value="3">⭐⭐⭐ 3</option>
+                                        <option value="4">⭐⭐⭐⭐ 4</option>
+                                        <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" x-model="transportationForm.is_public" id="transport-public">
+                                        <label for="transport-public">Make public</label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Transportation</button>
+                            </form>
+                        </div>
+
+                        <template x-for="transport in locationTransportation" :key="transport.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span class="badge badge-blue" x-text="transport.type"></span>
+                                        <p class="text-sm" style="margin-top: 0.5rem;">
+                                            <span x-text="transport.from_location || 'Unknown'"></span> → <span x-text="transport.to_location || 'Unknown'"></span>
+                                        </p>
+                                        <p class="text-sm text-muted" x-show="transport.depart_time || transport.arrive_time">
+                                            <span x-show="transport.depart_time">🕒 <span x-text="new Date(transport.depart_time).toLocaleString()"></span></span>
+                                            <span x-show="transport.arrive_time"> → <span x-text="new Date(transport.arrive_time).toLocaleString()"></span></span>
+                                        </p>
+                                        <p class="text-sm" x-show="transport.link">
+                                            🔗 <a :href="transport.link" target="_blank" rel="noopener" style="color: var(--link);">Details</a>
+                                        </p>
+                                    </div>
+                                    <button @click="deleteTransportation(transport.id)" class="btn btn-sm btn-danger">Delete</button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationTransportation.length === 0" class="text-muted">No transportation records yet.</p>
+                    </div>
+
+                    <!-- Lodging Tab -->
+                    <div x-show="locationTab === 'lodging'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Lodging</h3>
+                            <button @click="showAddLodging = !showAddLodging" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddLodging">+ Add Lodging</span>
+                                <span x-show="showAddLodging">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddLodging" class="card">
+                            <form @submit.prevent="createLodging()">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input type="text" x-model="lodgingForm.name" placeholder="Hotel name, Airbnb, etc." required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Lodging</button>
+                            </form>
+                        </div>
+
+                        <template x-for="lodging in locationLodging" :key="lodging.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start">
+                                    <h4 x-text="lodging.name"></h4>
+                                    <button @click="deleteLodging(lodging.id)" class="btn btn-sm btn-danger">Delete</button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationLodging.length === 0" class="text-muted">No lodging information yet.</p>
+                    </div>
+
+                    <!-- Trails Tab -->
+                    <div x-show="locationTab === 'trails'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3>Trails</h3>
+                            <button @click="showAddTrail = !showAddTrail" class="btn btn-sm btn-primary">
+                                <span x-show="!showAddTrail">+ Add Trail</span>
+                                <span x-show="showAddTrail">Cancel</span>
+                            </button>
+                        </div>
+                        
+                        <div x-show="showAddTrail" class="card">
+                            <form @submit.prevent="createTrail()">
+                                <div class="form-group">
+                                    <label>Trail Name</label>
+                                    <input type="text" x-model="trailForm.name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Difficulty</label>
+                                    <select x-model="trailForm.difficulty">
+                                        <option value="">Select difficulty</option>
+                                        <option value="easy">🟢 Easy</option>
+                                        <option value="moderate">🟡 Moderate</option>
+                                        <option value="hard">🔴 Hard</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Length (km)</label>
+                                    <input type="number" step="0.1" x-model="trailForm.length">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Trail</button>
+                            </form>
+                        </div>
+
+                        <template x-for="trail in locationTrails" :key="trail.id">
+                            <div class="card">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 x-text="trail.name"></h4>
+                                        <div class="flex gap-2" style="margin-top: 0.5rem;">
+                                            <span x-show="trail.difficulty" class="badge" :class="{
+                                                'badge-green': trail.difficulty === 'easy',
+                                                'badge-yellow': trail.difficulty === 'moderate',
+                                                'badge-red': trail.difficulty === 'hard'
+                                            }" x-text="trail.difficulty"></span>
+                                            <span x-show="trail.length" class="text-sm text-muted" x-text="trail.length + ' km'"></span>
+                                        </div>
+                                    </div>
+                                    <button @click="deleteTrail(trail.id)" class="btn btn-sm btn-danger">Delete</button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="locationTrails.length === 0" class="text-muted">No trails recorded yet.</p>
+                    </div>
+                </div>
+            </div>

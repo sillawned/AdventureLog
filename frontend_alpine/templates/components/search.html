@@ -1,0 +1,205 @@
+<!-- Search View -->
+<div x-show="currentView === 'search'" x-transition class="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+    <!-- Header -->
+    <div class="sticky top-0 z-40 bg-base-100/80 backdrop-blur-lg border-b border-base-300">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center gap-4">
+                <div class="p-2 bg-primary/10 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        Search<span x-show="searchQuery" x-text="': ' + searchQuery"></span>
+                    </h1>
+                    <p x-show="searchResultsCount > 0" class="text-sm text-base-content/60" x-text="searchResultsCount + ' ' + (searchResultsCount !== 1 ? 'results' : 'result') + ' found'"></p>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="mt-4 relative">
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input 
+                    type="text" 
+                    x-model="searchQuery" 
+                    @input="performSearch()"
+                    placeholder="Search for locations, collections, countries, regions, cities, users..."
+                    class="input input-bordered w-full pl-12 pr-12 bg-base-100/80"
+                >
+                <button 
+                    x-show="searchQuery" 
+                    @click="searchQuery = ''; performSearch()"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+        <!-- Empty State -->
+        <div x-show="!searchResults || searchResultsCount === 0" class="flex flex-col items-center justify-center py-16">
+            <div class="p-6 bg-base-200/50 rounded-2xl mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-base-content/70 mb-2">No Results Found</h3>
+            <p class="text-base-content/50 text-center max-w-md">
+                Try searching for locations, collections, countries, or other content.
+            </p>
+        </div>
+
+        <!-- Locations Results -->
+        <div x-show="searchResults && searchResults.locations && searchResults.locations.length > 0" class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-primary/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Locations</h2>
+                <div class="badge badge-primary" x-text="searchResults.locations.length"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <template x-for="location in searchResults.locations" :key="location.id">
+                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewLocation(location.id)">
+                        <figure x-show="location.featured_image" class="h-48">
+                            <img :src="location.featured_image" :alt="location.name" class="w-full h-full object-cover">
+                        </figure>
+                        <div class="card-body">
+                            <h3 class="card-title" x-text="location.name"></h3>
+                            <p class="text-sm text-base-content/70" x-show="location.location" x-text="location.location"></p>
+                            <div class="badge badge-outline" x-show="location.activity_type" x-text="location.activity_type"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Collections Results -->
+        <div x-show="searchResults && searchResults.collections && searchResults.collections.length > 0" class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-secondary/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Collections</h2>
+                <div class="badge badge-secondary" x-text="searchResults.collections.length"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <template x-for="collection in searchResults.collections" :key="collection.id">
+                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewCollection(collection.id)">
+                        <div class="card-body">
+                            <h3 class="card-title" x-text="collection.name"></h3>
+                            <p class="text-sm text-base-content/70" x-show="collection.description" x-text="collection.description"></p>
+                            <div class="badge badge-outline" x-show="collection.type" x-text="collection.type"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Countries Results -->
+        <div x-show="searchResults && searchResults.countries && searchResults.countries.length > 0" class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-accent/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Countries</h2>
+                <div class="badge badge-accent" x-text="searchResults.countries.length"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <template x-for="country in searchResults.countries" :key="country.id">
+                    <div class="country-card cursor-pointer" @click="viewCountry(country.id)">
+                        <img :src="`https://flagcdn.com/w320/${country.code.toLowerCase()}.png`" :alt="country.name" class="country-flag">
+                        <div class="country-info">
+                            <h3 class="country-name" x-text="country.name"></h3>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Regions Results -->
+        <div x-show="searchResults && searchResults.regions && searchResults.regions.length > 0" class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-info/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Regions</h2>
+                <div class="badge badge-info" x-text="searchResults.regions.length"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <template x-for="region in searchResults.regions" :key="region.id">
+                    <div class="region-card cursor-pointer" @click="viewRegion(region.country_id, region.id)">
+                        <div class="region-card-header">
+                            <h3 class="region-name" x-text="region.name"></h3>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Cities Results -->
+        <div x-show="searchResults && searchResults.cities && searchResults.cities.length > 0" class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-warning/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Cities</h2>
+                <div class="badge badge-warning" x-text="searchResults.cities.length"></div>
+            </div>
+            <div class="cities-grid">
+                <template x-for="city in searchResults.cities" :key="city.id">
+                    <div class="city-card">
+                        <h3 class="city-name" x-text="city.name"></h3>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Users Results -->
+        <div x-show="searchResults && searchResults.users && searchResults.users.length > 0" class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-success/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Users</h2>
+                <div class="badge badge-success" x-text="searchResults.users.length"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <template x-for="user in searchResults.users" :key="user.id">
+                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewProfile(user.id)">
+                        <div class="card-body items-center text-center">
+                            <div class="avatar">
+                                <div class="w-16 h-16 rounded-full">
+                                    <img :src="user.profile_pic || `https://eu.ui-avatars.com/api/?name=${user.username}&size=250&background=random`" :alt="user.username">
+                                </div>
+                            </div>
+                            <h3 class="card-title" x-text="user.first_name && user.last_name ? user.first_name + ' ' + user.last_name : user.username"></h3>
+                            <p class="text-sm text-base-content/60" x-text="'@' + user.username"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>

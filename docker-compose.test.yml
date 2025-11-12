@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: adventurelog-db
+    environment:
+      POSTGRES_DB: adventurelog
+      POSTGRES_USER: adventurelog
+      POSTGRES_PASSWORD: adventurelog_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adventurelog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - adventurelog-network
+
+  # FastAPI Backend (Development)
+  backend-dev:
+    build:
+      context: ./backend_fastapi
+      dockerfile: Dockerfile
+      target: dev
+    container_name: adventurelog-backend-dev
+    environment:
+      # Database configuration
+      DATABASE_URL: postgresql://adventurelog:adventurelog_password@postgres:5432/adventurelog
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: adventurelog
+      POSTGRES_USER: adventurelog
+      POSTGRES_PASSWORD: adventurelog_password
+      
+      # API configuration
+      SECRET_KEY: dev-secret-key-change-in-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      
+      # Optional: External API keys
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      
+      # Debug mode
+      DEBUG: "True"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend_fastapi/app:/app/app:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - adventurelog-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Alpine.js Frontend (nginx-alpine)
+  frontend-alpine:
+    build:
+      context: ./frontend_alpine
+      dockerfile: Dockerfile
+    container_name: adventurelog-frontend-alpine
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-dev
+    networks:
+      - adventurelog-network
+
+  # FastAPI Backend (Production)
+  backend-prod:
+    build:
+      context: ./backend_fastapi
+      dockerfile: Dockerfile.new
+      target: server
+    container_name: adventurelog-backend-prod
+    environment:
+      DATABASE_URL: postgresql://adventurelog:adventurelog_password@postgres:5432/adventurelog
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: adventurelog
+      POSTGRES_USER: adventurelog
+      POSTGRES_PASSWORD: adventurelog_password
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      DEBUG: "False"
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - adventurelog-network
+    profiles:
+      - production
+
+networks:
+  adventurelog-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

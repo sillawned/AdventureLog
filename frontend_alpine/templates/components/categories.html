@@ -1,0 +1,76 @@
+<!-- Categories View -->
+<div x-show="currentView === 'categories'" class="container mt-4">
+    <div class="flex justify-between items-center mb-4">
+        <h2>Categories</h2>
+        <button @click="showAddCategory = !showAddCategory" class="btn btn-primary">
+            <span x-text="showAddCategory ? 'Cancel' : '+ Add Category'"></span>
+        </button>
+    </div>
+    
+    <!-- Add Category Form -->
+    <div x-show="showAddCategory" class="card mb-4">
+        <form @submit.prevent="createCategory()">
+            <div class="form-group">
+                <label>Name*</label>
+                <input type="text" x-model="categoryForm.name" required>
+            </div>
+            <div class="form-group">
+                <label>Icon (optional)</label>
+                <input type="text" x-model="categoryForm.icon" placeholder="🏔️">
+                <small class="text-light">Enter an emoji or icon character</small>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" x-model="categoryForm.is_public">
+                    Make public
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Category</button>
+        </form>
+    </div>
+    
+    <!-- Search Bar -->
+    <div x-show="!showAddCategory && categories.length > 0" class="card mb-4">
+        <div class="form-group" style="margin-bottom: 0;">
+            <input 
+                type="text" 
+                x-model="categoriesSearchQuery" 
+                placeholder="🔍 Search categories by name or icon..."
+                class="w-full"
+            >
+        </div>
+        <p x-show="categoriesSearchQuery" class="text-sm text-muted mt-2">
+            Showing <strong x-text="filteredCategories.length"></strong> of <strong x-text="categories.length"></strong> categories
+        </p>
+    </div>
+    
+    <!-- Categories Grid -->
+    <div class="grid grid-3 gap-4">
+        <template x-for="category in filteredCategories" :key="category.id">
+            <div class="card">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                        <span x-text="category.icon || '📁'" style="font-size: 1.5rem;"></span>
+                        <h3 x-text="category.name"></h3>
+                    </div>
+                    <button @click="deleteCategory(category.id)" class="btn-icon btn-danger">🗑️</button>
+                </div>
+                <div class="flex gap-2 mt-2">
+                    <span class="badge" x-text="category.is_public ? 'Public' : 'Private'"></span>
+                </div>
+            </div>
+        </template>
+        
+        <template x-if="filteredCategories.length === 0 && categories.length > 0">
+            <div class="card text-center" style="grid-column: 1 / -1;">
+                <p class="text-light">No categories match your search.</p>
+            </div>
+        </template>
+        
+        <template x-if="categories.length === 0 && !showAddCategory">
+            <div class="card text-center" style="grid-column: 1 / -1;">
+                <p class="text-light">No categories yet. Create your first one!</p>
+            </div>
+        </template>
+    </div>
+</div>

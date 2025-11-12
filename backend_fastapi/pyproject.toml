@@ -1,0 +1,30 @@
+[project]
+name = "adventurelog-fastapi"
+version = "0.1.0"
+description = "AdventureLog — FastAPI migration skeleton"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi>=0.95",
+    "uvicorn[standard]>=0.22",
+    "sqlalchemy>=2.0",
+    "alembic>=1.10",
+    "asyncpg>=0.27",
+    "python-dotenv>=1.1.0",
+    "python-jose[cryptography]>=3.3.0",
+    "bcrypt",
+    "httpx>=0.24",
+    "aiofiles>=23.1",
+    "python-multipart>=0.0.7",
+    "geoalchemy2>=0.13", # Optional: keep PostGIS/Geo support available
+    "pydantic-settings>=1.0",
+    "pydantic[email]>=2.0",  # For EmailStr validation
+]
+
+[tool.setuptools]
+py-modules = []
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

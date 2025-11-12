@@ -1,0 +1,45 @@
+<!-- Dashboard View -->
+            <div x-show="currentView === 'dashboard' && user">
+                <h2 style="margin-bottom: 1.5rem;">Dashboard</h2>
+                
+                <div class="stats-grid" x-show="stats">
+                    <div class="stat-card">
+                        <h3 x-text="stats?.total_locations || 0"></h3>
+                        <p>Total Locations</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 x-text="stats?.total_visits || 0"></h3>
+                        <p>Total Visits</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 x-text="stats?.total_collections || 0"></h3>
+                        <p>Collections</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 x-text="stats?.countries_visited || 0"></h3>
+                        <p>Countries</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mb-4">
+                    <h3>Recent Locations</h3>
+                    <button @click="currentView = 'locations'" class="btn btn-primary">View All</button>
+                </div>
+                <div class="grid grid-3">
+                    <template x-for="location in locations.slice(0, 6)" :key="location.id">
+                        <div class="card" @click="viewLocation(location)" style="cursor: pointer;">
+                            <h4 x-text="location.name"></h4>
+                            <p class="text-sm text-muted">
+                                <span x-text="location.city"></span><span x-show="location.city && location.country">, </span><span x-text="location.country"></span>
+                            </p>
+                            <div class="flex gap-2 mb-2" x-show="location.category || location.collection">
+                                <span x-show="location.category" class="badge" x-text="location.category?.name" :style="'background-color: ' + (location.category?.color || '#6c757d')"></span>
+                                <span x-show="location.collection" class="badge badge-secondary" x-text="location.collection?.name"></span>
+                            </div>
+                            <div x-show="location.rating" class="text-sm" style="margin-top: 0.5rem;">
+                                <span x-text="'⭐'.repeat(location.rating)"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>

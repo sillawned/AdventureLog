@@ -1,0 +1,91 @@
+<!-- Collections View -->
+            <div x-show="currentView === 'collections' && user">
+                <div class="flex justify-between items-center mb-4">
+                    <h2>Collections</h2>
+                    <button @click="showAddCollection = !showAddCollection" class="btn btn-primary">
+                        <span x-show="!showAddCollection">+ Add Collection</span>
+                        <span x-show="showAddCollection">Cancel</span>
+                    </button>
+                </div>
+
+                <!-- Add Collection Form -->
+                <div x-show="showAddCollection" class="card">
+                    <h3 class="mb-4">Create Collection</h3>
+                    <form @submit.prevent="createCollection()">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" x-model="collectionForm.name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea x-model="collectionForm.description" rows="3" placeholder="Describe this collection"></textarea>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" x-model="collectionForm.start_date">
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" x-model="collectionForm.end_date">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>External Link</label>
+                            <input type="url" x-model="collectionForm.link" placeholder="https://example.com/info">
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" x-model="collectionForm.is_public" id="coll-public">
+                                <label for="coll-public">Make public</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" :disabled="loading">Create Collection</button>
+                    </form>
+                </div>
+
+                <!-- Search Bar -->
+                <div x-show="!showAddCollection && collections.length > 0" class="card mb-4">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input 
+                            type="text" 
+                            x-model="collectionsSearchQuery" 
+                            placeholder="🔍 Search collections by name..."
+                            class="w-full"
+                        >
+                    </div>
+                    <p x-show="collectionsSearchQuery" class="text-sm text-muted mt-2">
+                        Showing <strong x-text="filteredCollections.length"></strong> of <strong x-text="collections.length"></strong> collections
+                    </p>
+                </div>
+
+                <!-- Collections List -->
+                <div class="grid grid-3">
+                    <template x-for="collection in filteredCollections" :key="collection.id">
+                        <div class="card">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 x-text="collection.name"></h4>
+                                    <p class="text-sm" x-show="collection.description" x-text="collection.description"></p>
+                                    <p class="text-xs text-muted" x-show="collection.start_date || collection.end_date">
+                                        <span x-show="collection.start_date" x-text="new Date(collection.start_date).toLocaleDateString()"></span>
+                                        <span x-show="collection.end_date"> → <span x-text="new Date(collection.end_date).toLocaleDateString()"></span></span>
+                                    </p>
+                                    <p class="text-xs" x-show="collection.link">
+                                        🔗 <a :href="collection.link" target="_blank" rel="noopener" style="color: var(--link);">Link</a>
+                                    </p>
+                                    <p class="text-sm text-muted" x-text="(collection.locations?.length || 0) + ' locations'"></p>
+                                </div>
+                                <button @click="deleteCollection(collection.id)" class="btn btn-sm btn-danger">Delete</button>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <template x-if="filteredCollections.length === 0 && collections.length > 0">
+                        <div class="card text-center" style="grid-column: 1 / -1;">
+                            <p class="text-muted">No collections match your search.</p>
+                        </div>
+                    </template>
+                </div>
+                <p x-show="collections.length === 0 && !showAddCollection" class="text-muted">No collections yet.</p>
+            </div>

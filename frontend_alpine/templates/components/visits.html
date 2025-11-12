@@ -1,0 +1,35 @@
+<!-- Visits View -->
+<div x-show="currentView === 'visits'" class="container mt-4">
+    <div class="flex justify-between items-center mb-4">
+        <h2>Visits History</h2>
+    </div>
+    
+    <!-- Visits List -->
+    <div class="space-y-3">
+        <template x-for="visit in allVisits" :key="visit.id">
+            <div class="card">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 x-text="visit.location?.name || 'Unknown Location'"></h3>
+                            <span x-show="visit.location?.city" class="text-sm text-muted" x-text="visit.location?.city + (visit.location?.country ? ', ' + visit.location.country : '')"></span>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-light">
+                                📅 <span x-text="visit.start_date ? new Date(visit.start_date + 'T00:00:00').toLocaleDateString() : 'No date'"></span>
+                                <span x-show="visit.end_date"> → <span x-text="new Date(visit.end_date + 'T00:00:00').toLocaleDateString()"></span></span>
+                            </p>
+                        </div>
+                    </div>
+                    <button @click="deleteVisit(visit.id)" class="btn-icon btn-danger">🗑️</button>
+                </div>
+            </div>
+        </template>
+        
+        <template x-if="allVisits.length === 0">
+            <div class="card text-center">
+                <p class="text-light">No visits recorded yet. Add visits from location details!</p>
+            </div>
+        </template>
+    </div>
+</div>

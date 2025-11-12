@@ -1,0 +1,20 @@
+<!-- Login View -->
+            <div x-show="currentView === 'login'" style="max-width: 400px; margin: 2rem auto;">
+                <div class="card">
+                    <h2 style="margin-bottom: 1.5rem;">Login</h2>
+                    <form @submit.prevent="login()">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" x-model="loginForm.username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" x-model="loginForm.password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;" :disabled="loading">
+                            <span x-show="!loading">Login</span>
+                            <span x-show="loading">Loading...</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
