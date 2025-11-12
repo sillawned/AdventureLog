@@ -1,7 +1,12 @@
 /* CSS Variables */
 :root {
     --primary: #3b82f6;
+    --primary-rgb: 59, 130, 246;
     --primary-dark: #2563eb;
+    --secondary: #8b5cf6;
+    --secondary-rgb: 139, 92, 246;
+    --accent: #ec4899;
+    --accent-rgb: 236, 72, 153;
     --success: #10b981;
     --danger: #ef4444;
     --bg: #f9fafb;
@@ -14,7 +19,12 @@
 /* Dark Theme */
 :root.dark {
     --primary: #60a5fa;
+    --primary-rgb: 96, 165, 250;
     --primary-dark: #3b82f6;
+    --secondary: #a78bfa;
+    --secondary-rgb: 167, 139, 250;
+    --accent: #f472b6;
+    --accent-rgb: 244, 114, 182;
     --success: #34d399;
     --danger: #f87171;
     --bg: #111827;
