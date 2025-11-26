@@ -18,3 +18,8 @@ body {
     padding: 0 1rem;
 }
 
+/* Alpine.js Cloaking - Hide elements until Alpine is ready */
+[x-cloak] {
+    display: none !important;
+}
+

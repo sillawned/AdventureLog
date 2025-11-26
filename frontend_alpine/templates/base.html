@@ -10,17 +10,178 @@
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
         crossorigin="anonymous" />
     
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <!-- Svelte Web Components CSS -->
+    <link rel="stylesheet" href="/static/svelte/components.css?v=4">
     
     <style>
         {% include 'styles/variables.css' %}
         {% include 'styles/base.css' %}
         {% include 'styles/components.css' %}
     </style>
+    
+    <!-- Load app scripts before Alpine.js -->
+    <script>
+        console.log('[1] Starting script execution...');
+        
+        {% include 'scripts/config.js' %}
+        console.log('[2] Config loaded, API_URL:', typeof API_URL);
+        
+        {% include 'scripts/state.js' %}
+        console.log('[3] State loaded, getInitialState:', typeof getInitialState);
+        
+        {% include 'scripts/api.js' %}
+        console.log('[4] API loaded');
+        
+        {% include 'scripts/auth.js' %}
+        console.log('[5] Auth loaded');
+        
+        {% include 'scripts/locations.js' %}
+        console.log('[6] Locations loaded');
+        
+        {% include 'scripts/collections.js' %}
+        console.log('[7] Collections loaded');
+        
+        {% include 'scripts/worldtravel.js' %}
+        console.log('[8] WorldTravel loaded');
+        
+        {% include 'scripts/ui.js' %}
+        console.log('[9] UI loaded');
+        
+        {% include 'scripts/filters.js' %}
+        console.log('[10] Filters loaded');
+        
+        {% include 'scripts/map.js' %}
+        console.log('[11] Map loaded');
+        
+        {% include 'scripts/stats.js' %}
+        console.log('[12] Stats loaded');
+        
+        {% include 'scripts/additional-features.js' %}
+        console.log('[13] Additional features loaded');
+        
+        {% include 'scripts/map-view.js' %}
+        console.log('[14] Map-view loaded');
+        
+        {% include 'scripts/app-modular.js' %}
+        console.log('[15] App-modular loaded, app function:', typeof app);
+        
+        // Verify app function is accessible
+        if (typeof app !== 'function') {
+            console.error('CRITICAL: app() function is not defined after scripts loaded!');
+            window.alpineErrors = window.alpineErrors || [];
+            window.alpineErrors.push({ type: 'critical', msg: 'app() function not defined after script execution' });
+        } else {
+            console.log('✓ app() function successfully defined');
+            window.APP_LOADED = true;
+        }
+    </script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="anonymous"></script>
+    
+    <!-- Svelte Web Components JS -->
+    <script src="/static/svelte/components.js?v=4"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    
+    <!-- Error Display for Debugging -->
+    <script>
+        window.alpineErrors = [];
+        window.alpineDebug = [];
+        
+        // Add debug logging
+        window.alpineDebug.push('Script loaded at ' + new Date().toISOString());
+        
+        window.addEventListener('error', function(e) {
+            // Ignore the generic "Script error" from Alpine - these are expected during reactive setup
+            if (e.message === 'Script error.' && e.filename && e.filename.includes('alpinejs')) {
+                return; // Suppress these - they're Alpine's normal evaluation warnings
+            }
+            window.alpineErrors.push({
+                type: 'error',
+                msg: e.message,
+                file: e.filename,
+                line: e.lineno,
+                col: e.colno
+            });
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            window.alpineErrors.push({
+                type: 'rejection',
+                msg: String(e.reason)
+            });
+        });
+        
+        // Check if app function exists
+        setTimeout(function() {
+            alpineDebug.push('Checking app function...');
+            if (typeof app === 'function') {
+                alpineDebug.push('✓ app() function exists');
+                try {
+                    var testApp = app();
+                    alpineDebug.push('✓ app() can be called, returns: ' + typeof testApp);
+                    if (testApp && typeof testApp === 'object') {
+                        alpineDebug.push('✓ app() returns object with keys: ' + Object.keys(testApp).slice(0, 10).join(', '));
+                    }
+                } catch (e) {
+                    alpineDebug.push('✗ Error calling app(): ' + e.message);
+                    alpineErrors.push({ type: 'app-error', msg: 'app() failed: ' + e.message });
+                }
+            } else {
+                alpineDebug.push('✗ app() function not found');
+                alpineErrors.push({ type: 'app-error', msg: 'app() function not defined' });
+            }
+            
+            if (window.Alpine) {
+                alpineDebug.push('✓ Alpine.js loaded');
+            } else {
+                alpineDebug.push('✗ Alpine.js not loaded');
+                alpineErrors.push({ type: 'alpine-error', msg: 'Alpine.js failed to load' });
+            }
+        }, 1000);
+        
+        // Show errors or debug info after a delay
+        setTimeout(function() {
+            if (window.alpineErrors.length > 0 || !document.querySelector('[x-data]')) {
+                var errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#f00;color:#fff;padding:20px;z-index:99999;max-height:400px;overflow:auto;font-family:monospace;font-size:12px;';
+                errorDiv.innerHTML = '<h3 style="margin:0 0 10px 0;">⚠️ Debugging Info:</h3>';
+                
+                // Show debug info
+                errorDiv.innerHTML += '<div style="background:#800;padding:10px;margin:10px 0;"><strong>Debug Log:</strong><br>';
+                window.alpineDebug.forEach(function(msg) {
+                    errorDiv.innerHTML += msg + '<br>';
+                });
+                errorDiv.innerHTML += '</div>';
+                
+                // Show errors
+                if (window.alpineErrors.length > 0) {
+                    errorDiv.innerHTML += '<div style="background:#600;padding:10px;"><strong>Errors:</strong><br>';
+                    window.alpineErrors.forEach(function(err) {
+                        errorDiv.innerHTML += '<p style="margin:5px 0;">' + err.type + ': ' + err.msg + 
+                            (err.file ? ' at ' + err.file + ':' + err.line : '') + '</p>';
+                    });
+                    errorDiv.innerHTML += '</div>';
+                }
+                
+                // Check x-data
+                var xDataEl = document.querySelector('[x-data]');
+                if (!xDataEl) {
+                    errorDiv.innerHTML += '<p style="background:#600;padding:10px;margin:10px 0;"><strong>✗ No [x-data] element found in DOM!</strong></p>';
+                } else {
+                    errorDiv.innerHTML += '<p style="background:#060;padding:10px;margin:10px 0;"><strong>✓ [x-data] element exists</strong></p>';
+                }
+                
+                document.body.insertBefore(errorDiv, document.body.firstChild);
+            }
+        }, 2500);
+    </script>
 </head>
 <body>
-    <div x-data="app()" x-init="init()">
+    <div x-data="app()" x-init="init()" x-cloak>
         {% include 'components/header.html' %}
 
         <!-- Main Content -->
@@ -33,6 +194,7 @@
             {% include 'components/locations.html' %}
             {% include 'components/location-detail.html' %}
             {% include 'components/collections.html' %}
+            {% include 'components/collection-detail.html' %}
             {% include 'components/categories.html' %}
             {% include 'components/visits.html' %}
             {% include 'components/worldtravel.html' %}
@@ -42,26 +204,5 @@
             {% include 'components/profile.html' %}
         </main>
     </div>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin="anonymous"></script>
-    
-    <script>
-        {% include 'scripts/config.js' %}
-        {% include 'scripts/state.js' %}
-        {% include 'scripts/api.js' %}
-        {% include 'scripts/auth.js' %}
-        {% include 'scripts/locations.js' %}
-        {% include 'scripts/collections.js' %}
-        {% include 'scripts/worldtravel.js' %}
-        {% include 'scripts/ui.js' %}
-        {% include 'scripts/filters.js' %}
-        {% include 'scripts/map.js' %}
-        {% include 'scripts/stats.js' %}
-        {% include 'scripts/additional-features.js' %}
-        {% include 'scripts/app-modular.js' %}
-    </script>
 </body>
 </html>
