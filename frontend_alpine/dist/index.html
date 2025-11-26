@@ -1243,6 +1243,13 @@ body {
 }
     </style>
     
+    <!-- Load Leaflet and Svelte components FIRST to avoid namespace conflicts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="anonymous"></script>
+    
+    <script src="/static/svelte/components.js?v=4"></script>
+    
     <!-- Load app scripts before Alpine.js -->
     <script>
         console.log('[1] Starting script execution...');
@@ -3207,214 +3214,64 @@ const statsMethods = {
 };        console.log('[12] Stats loaded');
         
 // Additional features JavaScript methods
+// FastAPI migration adjustments:
+// - Disabled legacy features pointing to missing endpoints (search, calendar, profile CRUD)
+// - Corrected import/export paths to /api/data/... (frontend uses API_URL + /data)
+// - Stubs provide user feedback without throwing network errors
+
 const additionalFeaturesMethods = {
-    // Search functionality
-    async performSearch() {
-        if (!this.searchQuery || this.searchQuery.trim() === '') {
-            this.searchResults = null;
-            this.searchResultsCount = 0;
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_URL}/search/?query=${encodeURIComponent(this.searchQuery)}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.searchResults = data;
-                this.searchResultsCount = (data.locations?.length || 0) +
-                                          (data.collections?.length || 0) +
-                                          (data.countries?.length || 0) +
-                                          (data.regions?.length || 0) +
-                                          (data.cities?.length || 0) +
-                                          (data.users?.length || 0);
-            }
-        } catch (error) {
-            console.error('Search error:', error);
-            this.showError('Search failed');
-        }
+    // ---- Disabled / Stubbed Features ----
+    performSearch() {
+        this.showError('Search feature not available (backend endpoint missing)');
+        this.searchResults = null;
+        this.searchResultsCount = 0;
+    },
+    loadCalendarEvents() {
+        this.showError('Calendar feature not available (backend endpoint missing)');
+        this.calendarEvents = [];
+        this.calendarDays = [];
+    },
+    downloadICS() {
+        this.showError('ICS export not available (backend endpoint missing)');
+    },
+    updateProfile() {
+        this.showError('Profile update not available (backend endpoint missing)');
+    },
+    deleteAccount() {
+        this.showError('Account deletion not available (backend endpoint missing)');
+    },
+    loadProfile(userId) {
+        this.showError('Profile view not available (backend endpoint missing)');
+        this.profileUser = null;
+    },
+    loadProfileStats(userId) { /* stub */ },
+    loadProfileLocations(userId) { /* stub */ },
+    loadProfileCollections(userId) { /* stub */ },
+    viewProfile(userId) {
+        this.currentView = 'profile';
+        this.loadProfile(userId);
     },
 
-    // Calendar functionality
-    async loadCalendarEvents() {
-        try {
-            const response = await fetch(`${API_URL}/adventures/calendar/`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.calendarEvents = data.events || [];
-                this.generateCalendarDays();
-            }
-        } catch (error) {
-            console.error('Calendar load error:', error);
-        }
-    },
-
-    generateCalendarDays() {
-        const year = this.calendarCurrentDate.getFullYear();
-        const month = this.calendarCurrentDate.getMonth();
-        
-        const firstDay = new Date(year, month, 1);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
-        
-        const days = [];
-        const currentDate = new Date(startDate);
-        
-        while (days.length < 42) {
-            const dayEvents = (this.calendarEvents || []).filter(event => {
-                const eventDate = new Date(event.start);
-                return eventDate.getDate() === currentDate.getDate() &&
-                       eventDate.getMonth() === currentDate.getMonth() &&
-                       eventDate.getFullYear() === currentDate.getFullYear();
-            });
-            
-            days.push({
-                date: new Date(currentDate),
-                dayNumber: currentDate.getDate(),
-                isCurrentMonth: currentDate.getMonth() === month,
-                isToday: this.isToday(currentDate),
-                events: dayEvents
-            });
-            
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-        
-        this.calendarDays = days;
-    },
-
-    previousMonth() {
-        this.calendarCurrentDate.setMonth(this.calendarCurrentDate.getMonth() - 1);
-        this.calendarCurrentDate = new Date(this.calendarCurrentDate);
-        this.generateCalendarDays();
-    },
-
-    nextMonth() {
-        this.calendarCurrentDate.setMonth(this.calendarCurrentDate.getMonth() + 1);
-        this.calendarCurrentDate = new Date(this.calendarCurrentDate);
-        this.generateCalendarDays();
-    },
-
-    goToToday() {
-        this.calendarCurrentDate = new Date();
-        this.generateCalendarDays();
-    },
-
-    isToday(date) {
-        const today = new Date();
-        return date.getDate() === today.getDate() &&
-               date.getMonth() === today.getMonth() &&
-               date.getFullYear() === today.getFullYear();
-    },
-
-    viewEventDetail(event) {
-        this.selectedCalendarEvent = event;
-    },
-
-    formatEventDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    },
-
-    async downloadICS() {
-        try {
-            const response = await fetch(`${API_URL}/adventures/calendar/download/`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'adventures.ics';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                this.showSuccess('Calendar downloaded successfully');
-            }
-        } catch (error) {
-            console.error('ICS download error:', error);
-            this.showError('Failed to download calendar');
-        }
-    },
-
-    // Settings functionality
-    async updateProfile() {
-        try {
-            const response = await fetch(`${API_URL}/auth/user/`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: this.user.username,
-                    email: this.user.email,
-                    first_name: this.user.first_name,
-                    last_name: this.user.last_name,
-                    public_profile: this.user.public_profile
-                })
-            });
-
-            if (response.ok) {
-                this.showSuccess('Profile updated successfully');
-                await this.fetchUser();
-            } else {
-                this.showError('Failed to update profile');
-            }
-        } catch (error) {
-            console.error('Profile update error:', error);
-            this.showError('Failed to update profile');
-        }
-    },
-
-    savePreferences() {
-        localStorage.setItem('measurementSystem', this.useImperialSystem ? 'imperial' : 'metric');
-        localStorage.setItem('theme', this.selectedTheme);
-        this.showSuccess('Preferences saved');
-    },
-
-    changeTheme() {
-        const theme = this.selectedTheme === 'auto' ? 
-            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 
-            this.selectedTheme;
-        document.documentElement.setAttribute('data-theme', theme);
-        this.darkMode = theme === 'dark';
-        this.applyTheme();
-    },
-
+    // ---- Data Import / Export (active) ----
     async exportData() {
         try {
-            const response = await fetch(`${API_URL}/import-export/export/json`, {
+            const response = await fetch(`${API_URL}/data/export/json`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `adventurelog-export-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                this.showSuccess('Data exported successfully');
+            if (!response.ok) {
+                this.showError('Failed to export data');
+                return;
             }
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `adventurelog-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            this.showSuccess('Data exported successfully');
         } catch (error) {
             console.error('Export error:', error);
             this.showError('Failed to export data');
@@ -3422,14 +3279,12 @@ const additionalFeaturesMethods = {
     },
 
     async importData(event) {
-        const file = event.target.files[0];
+        const file = event.target.files?.[0];
         if (!file) return;
-
         try {
             const text = await file.text();
             const data = JSON.parse(text);
-
-            const response = await fetch(`${API_URL}/import-export/import/json`, {
+            const response = await fetch(`${API_URL}/data/import/json`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.token}`,
@@ -3437,138 +3292,59 @@ const additionalFeaturesMethods = {
                 },
                 body: JSON.stringify(data)
             });
-
-            if (response.ok) {
-                const stats = await response.json();
-                const message = `Import complete! Imported: ${stats.locations_imported} locations, ${stats.collections_imported} collections, ${stats.categories_imported} categories, ${stats.visits_imported} visits`;
-                if (stats.errors && stats.errors.length > 0) {
-                    console.warn('Import errors:', stats.errors);
-                }
-                this.showSuccess(message);
-                // Refresh all data
-                await Promise.all([
-                    this.fetchLocations(),
-                    this.fetchCollections(),
-                    this.fetchCategories(),
-                    this.fetchStats(),
-                    this.fetchAllVisits()
-                ]);
-            } else {
-                const error = await response.json();
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
                 this.showError(error.detail || 'Import failed');
+                return;
             }
+            const stats = await response.json();
+            const message = `Import complete: ${stats.locations_imported} locations, ${stats.collections_imported} collections, ${stats.categories_imported} categories, ${stats.visits_imported} visits`;
+            if (stats.errors?.length) {
+                console.warn('Import errors:', stats.errors);
+            }
+            this.showSuccess(message);
+            await Promise.all([
+                this.fetchLocations?.(),
+                this.fetchCollections?.(),
+                this.fetchCategories?.(),
+                this.fetchStats?.(),
+                this.fetchAllVisits?.()
+            ]);
         } catch (error) {
             console.error('Import error:', error);
             this.showError('Failed to import data: ' + error.message);
+        } finally {
+            event.target.value = '';
         }
-
-        // Reset file input
-        event.target.value = '';
     },
 
     confirmDeleteAccount() {
-        if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-            this.deleteAccount();
-        }
+        this.showError('Account deletion disabled (backend endpoint missing)');
     },
 
-    async deleteAccount() {
-        try {
-            const response = await fetch(`${API_URL}/auth/user/`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                this.showSuccess('Account deleted');
-                this.logout();
-            } else {
-                this.showError('Failed to delete account');
-            }
-        } catch (error) {
-            console.error('Delete account error:', error);
-            this.showError('Failed to delete account');
-        }
-    },
-
-    // Profile functionality
-    async loadProfile(userId) {
-        try {
-            const response = await fetch(`${API_URL}/users/${userId}/`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                this.profileUser = await response.json();
-                await this.loadProfileStats(userId);
-                await this.loadProfileLocations(userId);
-                await this.loadProfileCollections(userId);
-            }
-        } catch (error) {
-            console.error('Profile load error:', error);
-        }
-    },
-
-    async loadProfileStats(userId) {
-        try {
-            const response = await fetch(`${API_URL}/users/${userId}/stats/`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                this.profileStats = await response.json();
-            }
-        } catch (error) {
-            console.error('Profile stats load error:', error);
-        }
-    },
-
-    async loadProfileLocations(userId) {
-        try {
-            const response = await fetch(`${API_URL}/users/${userId}/locations/`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                this.profileLocations = await response.json();
-            }
-        } catch (error) {
-            console.error('Profile locations load error:', error);
-        }
-    },
-
-    async loadProfileCollections(userId) {
-        try {
-            const response = await fetch(`${API_URL}/users/${userId}/collections/`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                this.profileCollections = await response.json();
-            }
-        } catch (error) {
-            console.error('Profile collections load error:', error);
-        }
-    },
-
-    viewProfile(userId) {
-        this.currentView = 'profile';
-        this.loadProfile(userId);
-    },
-
-    viewCountry(countryId) {
+    // ---- Navigation helpers ----
+    viewWorldTravel() {
         this.currentView = 'worldtravel';
-        this.selectedCountry = countryId;
-        this.fetchCountryDetails();
+        this.worldTravelMode = 'countries';
+        if (!this.countries || this.countries.length === 0) {
+            this.fetchCountries?.();
+            this.fetchVisitedRegions?.();
+            this.fetchVisitedCities?.();
+        }
     },
-
-    viewRegion(countryId, regionId) {
-        this.currentView = 'worldtravel';
-        this.selectedCountry = countryId;
-        this.selectedRegion = regionId;
-        this.fetchRegionDetails();
+    viewCollections() {
+        this.currentView = 'collections';
+        if (!this.collections || this.collections.length === 0) {
+            this.fetchCollections?.();
+        }
     }
-};        console.log('[13] Additional features loaded');
+};
+
+// Export for integration
+// (Assumes a bundling/merging step combines these methods into the main app object.)
+if (typeof window !== 'undefined') {
+    window.additionalFeaturesMethods = additionalFeaturesMethods;
+}        console.log('[13] Additional features loaded');
         
 // Map view JavaScript methods
 const mapViewMethods = {
@@ -3985,11 +3761,6 @@ function app() {
             }
         };
     }
-}
-
-// Ensure global availability for x-data="app()" usage
-if (typeof window !== 'undefined') {
-    window.app = app;
 }        console.log('[15] App-modular loaded, app function:', typeof app);
         
         // Verify app function is accessible
@@ -4002,14 +3773,6 @@ if (typeof window !== 'undefined') {
             window.APP_LOADED = true;
         }
     </script>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin="anonymous"></script>
-    
-    <!-- Svelte Web Components JS -->
-    <script src="/static/svelte/components.js?v=4"></script>
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>

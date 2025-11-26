@@ -19,6 +19,13 @@
         {% include 'styles/components.css' %}
     </style>
     
+    <!-- Load Leaflet and Svelte components FIRST to avoid namespace conflicts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="anonymous"></script>
+    
+    <script src="/static/svelte/components.js?v=4"></script>
+    
     <!-- Load app scripts before Alpine.js -->
     <script>
         console.log('[1] Starting script execution...');
@@ -75,14 +82,6 @@
             window.APP_LOADED = true;
         }
     </script>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin="anonymous"></script>
-    
-    <!-- Svelte Web Components JS -->
-    <script src="/static/svelte/components.js?v=4"></script>
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
