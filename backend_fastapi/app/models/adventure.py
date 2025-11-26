@@ -32,7 +32,7 @@ class Location(Base):
     
     visits = relationship("Visit", back_populates="location", cascade="all, delete-orphan")
     category = relationship("Category", foreign_keys=[category_id])
-    collection = relationship("Collection", foreign_keys=[collection_id])
+    collection = relationship("Collection", back_populates="locations", foreign_keys=[collection_id])
 
 
 class Visit(Base):
@@ -66,6 +66,8 @@ class Collection(Base):
     is_public = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    locations = relationship("Location", back_populates="collection", foreign_keys="Location.collection_id")
 
 
 class Category(Base):

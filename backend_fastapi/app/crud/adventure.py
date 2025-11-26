@@ -288,7 +288,9 @@ async def count_locations(
 async def get_collection_by_id(db: AsyncSession, collection_id: UUID) -> Optional[Collection]:
     """Get a collection by ID."""
     result = await db.execute(
-        select(Collection).where(Collection.id == collection_id)
+        select(Collection)
+        .options(selectinload(Collection.locations))
+        .where(Collection.id == collection_id)
     )
     return result.scalar_one_or_none()
 
@@ -312,7 +314,7 @@ async def get_collections_by_user(
     offset: int = 0
 ) -> List[Collection]:
     """Get collections for a user."""
-    query = select(Collection).where(Collection.user_id == user_id)
+    query = select(Collection).options(selectinload(Collection.locations)).where(Collection.user_id == user_id)
     
     if not include_archived:
         query = query.where(Collection.is_archived.is_(False))
@@ -332,6 +334,7 @@ async def search_collections(
     """Search collections by name."""
     result = await db.execute(
         select(Collection)
+        .options(selectinload(Collection.locations))
         .where(
             and_(
                 Collection.user_id == user_id,
