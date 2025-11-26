@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from app.models.worldtravel import Country, Region, City
 from app.core.config import settings
 
-REMOTE_DATA_SOURCE_URL = "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/tags/v3.0/json/"
+REMOTE_DATA_SOURCE_URL = "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/tags/v3.0/json"
 
 
 async def fetch_json(url: str) -> dict:
@@ -23,6 +23,16 @@ async def fetch_json(url: str) -> dict:
 
 async def seed_countries(session: AsyncSession):
     """Import countries from CDN."""
+    from sqlalchemy import select, func
+    
+    # Check if countries already exist
+    result = await session.execute(select(func.count(Country.id)))
+    existing_count = result.scalar() or 0
+    
+    if existing_count > 0:
+        print(f"✓ Skipping countries - already have {existing_count} countries")
+        return
+    
     print("Fetching countries...")
     data = await fetch_json(f"{REMOTE_DATA_SOURCE_URL}/countries.json")
     
@@ -47,13 +57,22 @@ async def seed_countries(session: AsyncSession):
 
 async def seed_regions(session: AsyncSession):
     """Import regions/states from CDN."""
+    from sqlalchemy import select, func
+    
+    # Check if regions already exist
+    result = await session.execute(select(func.count(Region.id)))
+    existing_count = result.scalar() or 0
+    
+    if existing_count > 0:
+        print(f"✓ Skipping regions - already have {existing_count} regions")
+        return
+    
     print("Fetching regions/states...")
     data = await fetch_json(f"{REMOTE_DATA_SOURCE_URL}/states.json")
     
     regions_list = data if isinstance(data, list) else data.get('data', [])
     
     # Get country mapping for foreign keys
-    from sqlalchemy import select
     result = await session.execute(select(Country))
     countries = {c.country_code: c.id for c in result.scalars().all()}
     
@@ -83,13 +102,22 @@ async def seed_regions(session: AsyncSession):
 
 async def seed_cities(session: AsyncSession):
     """Import cities from CDN."""
+    from sqlalchemy import select, func
+    
+    # Check if cities already exist
+    result = await session.execute(select(func.count(City.id)))
+    existing_count = result.scalar() or 0
+    
+    if existing_count > 0:
+        print(f"✓ Skipping cities - already have {existing_count} cities")
+        return
+    
     print("Fetching cities...")
     data = await fetch_json(f"{REMOTE_DATA_SOURCE_URL}/cities.json")
     
     cities_list = data if isinstance(data, list) else data.get('data', [])
     
-    # Get region mapping
-    from sqlalchemy import select
+    # Get region mapping for foreign keys
     result = await session.execute(select(Region))
     regions = {r.id: r.id for r in result.scalars().all()}
     
@@ -137,8 +165,13 @@ async def main():
         print("Error: DATABASE_URL not configured")
         return
     
+    # Convert sync URL to async if needed
+    db_url = settings.DATABASE_URL
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    
     # Create async engine
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    engine = create_async_engine(db_url, echo=False)
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with async_session() as session:
