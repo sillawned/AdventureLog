@@ -28,7 +28,18 @@ const apiMethods = {
             throw new Error(errorMessage);
         }
         
-        return res.json();
+        // Handle 204 No Content responses (common for DELETE)
+        if (res.status === 204 || res.headers.get('content-length') === '0') {
+            return null;
+        }
+        
+        // Check if there's actually JSON to parse
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return res.json();
+        }
+        
+        return null;
     },
 
     showError(message) {
