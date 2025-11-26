@@ -316,15 +316,34 @@ async def update_existing_location(
     # Update fields
     update_data = location_data.model_dump(exclude_unset=True)
     if update_data:
-        # Convert category and collection to proper types
+        # Convert category and collection to proper types with validation
         if 'category' in update_data:
-            update_data['category_id'] = update_data.pop('category')
+            # category may be None or int
+            category_val = update_data.pop('category')
+            if category_val is not None:
+                if not isinstance(category_val, int):
+                    raise HTTPException(status_code=400, detail="Invalid category format")
+                update_data['category_id'] = category_val
+            else:
+                update_data['category_id'] = None
         if 'collection' in update_data:
-            collection_str = update_data.pop('collection')
-            update_data['collection_id'] = uuid.UUID(collection_str) if collection_str else None
-        
-        location = await update_location(db=db, location=location, **update_data)
-        await db.commit()
+            raw_collection = update_data.pop('collection')
+            if raw_collection in (None, ""):
+                update_data['collection_id'] = None  # Allow clearing collection
+            else:
+                try:
+                    update_data['collection_id'] = uuid.UUID(str(raw_collection))
+                except (ValueError, TypeError):
+                    raise HTTPException(status_code=400, detail="Invalid collection UUID format")
+
+        # Perform update
+        try:
+            location = await update_location(db=db, location=location, **update_data)
+            await db.commit()
+        except Exception as e:
+            # Rollback and surface a cleaner error instead of 500
+            await db.rollback()
+            raise HTTPException(status_code=400, detail=f"Update failed: {e}")
     
     return LocationResponse.from_orm_location(location)
 
