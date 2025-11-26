@@ -17,7 +17,7 @@ RUN python build.py
 FROM nginx:alpine
 
 # Copy built files from builder
-COPY --from=builder /build/dist/index.html /usr/share/nginx/html/
+COPY --from=builder /build/dist/ /usr/share/nginx/html/
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
