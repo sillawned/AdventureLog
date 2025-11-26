@@ -1,0 +1,40 @@
+<!-- Example: Location Map using Svelte Component -->
+<div x-show="locationsViewMode === 'map-svelte'" class="card" style="padding: 0; overflow: hidden;">
+    <!-- Svelte Map Component -->
+    <adventure-map 
+        x-ref="adventureMap"
+        style="height: 600px;"
+        :locations="JSON.stringify(filteredLocations)"
+    ></adventure-map>
+</div>
+
+<!-- Add a toggle to try the Svelte map -->
+<button 
+    @click="locationsViewMode = locationsViewMode === 'map-svelte' ? 'list' : 'map-svelte'" 
+    class="btn btn-outline"
+>
+    🗺️ Try Svelte Map
+</button>
+
+<!-- 
+USAGE NOTES:
+1. The Svelte component is loaded via: <script src="/static/svelte/components.js"></script>
+2. Data is passed via attributes - use x-bind: or :attribute for reactive data
+3. For complex objects, stringify them and parse in the component
+4. Access the component directly via x-ref for method calls
+5. Listen to custom events with @event-name
+
+EXAMPLE - Updating data programmatically:
+```javascript
+// Via ref
+this.$refs.adventureMap.locations = this.filteredLocations;
+
+// Via attribute binding (Alpine auto-updates)
+:locations="JSON.stringify(filteredLocations)"
+```
+
+EXAMPLE - Listening to events:
+<adventure-map 
+    @location-clicked="handleLocationClick($event.detail)"
+></adventure-map>
+-->

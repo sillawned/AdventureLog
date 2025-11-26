@@ -1,0 +1,34 @@
+<!-- Example: Using Svelte Map Component in Alpine.js -->
+<div x-data="{ 
+  locations: [],
+  async loadLocations() {
+    const response = await fetch('/api/adventures/');
+    this.locations = await response.json();
+    
+    // Update the web component
+    const mapEl = this.$refs.adventureMap;
+    if (mapEl) {
+      mapEl.locations = this.locations;
+    }
+  }
+}" x-init="loadLocations()">
+
+  <h2>My Locations</h2>
+  
+  <!-- Svelte map component as web component -->
+  <adventure-map 
+    x-ref="adventureMap"
+    style="height: 600px;"
+  ></adventure-map>
+  
+  <!-- Alpine.js controls -->
+  <div class="controls">
+    <button @click="loadLocations()" class="btn btn-primary">
+      Refresh Locations
+    </button>
+  </div>
+</div>
+
+<!-- Include the compiled Svelte components -->
+<script src="/static/svelte/components.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
