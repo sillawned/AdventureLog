@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Console</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+        .log { margin: 5px 0; }
+        .error { color: #f00; }
+        .warn { color: #ff0; }
+    </style>
+</head>
+<body>
+    <h1>Console Monitor</h1>
+    <div id="logs"></div>
+    
+    <script>
+        const logsDiv = document.getElementById('logs');
+        
+        function addLog(type, ...args) {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${type.toUpperCase()}: ${args.join(' ')}`;
+            logsDiv.appendChild(div);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        // Override console methods
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            addLog('log', ...args);
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            addLog('error', ...args);
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            addLog('warn', ...args);
+            originalWarn.apply(console, args);
+        };
+        
+        // Catch global errors
+        window.addEventListener('error', (event) => {
+            addLog('error', `GLOBAL ERROR: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`);
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            addLog('error', `UNHANDLED PROMISE REJECTION: ${event.reason}`);
+        });
+        
+        // Load the actual app in an iframe
+        console.log('Loading main app...');
+        
+        const iframe = document.createElement('iframe');
+        iframe.src = 'index.html';
+        iframe.style.cssText = 'position:fixed; top:0; right:0; width:50%; height:100%; border-left: 2px solid #0f0;';
+        document.body.appendChild(iframe);
+    </script>
+</body>
+</html>

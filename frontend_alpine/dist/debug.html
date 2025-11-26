@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Alpine.js Initialization</title>
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: sans-serif; padding: 20px; }
+        pre { background: #f5f5f5; padding: 10px; border: 1px solid #ddd; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Alpine.js Initialization Debug</h1>
+    
+    <div id="init-status">⏳ Checking initialization...</div>
+    
+    <h2>Test 1: Simple Alpine Component</h2>
+    <div x-data="{ message: 'Alpine works!' }" x-cloak>
+        <p x-text="message" class="success"></p>
+    </div>
+    
+    <h2>Test 2: Object.getOwnPropertyDescriptor Pattern</h2>
+    <div x-data="testApp()" x-cloak>
+        <p>Count from getter: <span x-text="count" class="success"></span></p>
+    </div>
+    
+    <h2>Console Output:</h2>
+    <pre id="console-output"></pre>
+    
+    <script>
+        // Capture console
+        let logs = [];
+        ['log', 'error', 'warn'].forEach(method => {
+            const original = console[method];
+            console[method] = function(...args) {
+                logs.push(`[${method.toUpperCase()}] ${args.join(' ')}`);
+                original.apply(console, args);
+                document.getElementById('console-output').textContent = logs.join('\n');
+            };
+        });
+        
+        // Test objects
+        const testMethods = {
+            items: [1, 2, 3],
+            get count() {
+                return this.items.length;
+            }
+        };
+        
+        function testApp() {
+            console.log('testApp() called');
+            return {
+                items: [1, 2, 3],
+                get count() {
+                    console.log('count getter called, items:', this.items);
+                    const getter = Object.getOwnPropertyDescriptor(testMethods, 'count').get;
+                    return getter.call(this);
+                }
+            };
+        }
+        
+        // Check if Alpine loaded
+        setTimeout(() => {
+            const status = document.getElementById('init-status');
+            if (window.Alpine) {
+                status.textContent = '✓ Alpine.js loaded successfully';
+                status.className = 'success';
+            } else {
+                status.textContent = '✗ Alpine.js failed to load';
+                status.className = 'error';
+            }
+        }, 2000);
+    </script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</body>
+</html>

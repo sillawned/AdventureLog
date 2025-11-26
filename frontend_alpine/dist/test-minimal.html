@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Minimal Alpine Test</title>
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: sans-serif; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Minimal Alpine.js Test</h1>
+    
+    <div x-data="{ user: null, darkMode: false }" x-cloak>
+        <h2>Alpine is working!</h2>
+        <template x-if="!user">
+            <p style="color: green;">✓ x-if with !user works (user is null)</p>
+        </template>
+        <template x-if="user">
+            <p style="color: red;">✗ This should not appear</p>
+        </template>
+    </div>
+    
+    <hr>
+    
+    <div id="test-status"></div>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <script>
+        setTimeout(() => {
+            const status = document.getElementById('test-status');
+            if (window.Alpine) {
+                status.innerHTML = '<p style="color: green;">✓ Alpine loaded</p>';
+            } else {
+                status.innerHTML = '<p style="color: red;">✗ Alpine failed to load</p>';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Test</title>
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: sans-serif; padding: 20px; }
+        #debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border: 2px solid #333; }
+        .error { background: #ffcccc; color: #cc0000; padding: 10px; margin: 5px 0; }
+        .success { background: #ccffcc; color: #006600; padding: 10px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Alpine.js Initialization Test</h1>
+    <div id="debug"></div>
+    
+    <h2>Test Component:</h2>
+    <div x-data="simpleApp()" x-cloak style="border: 2px solid blue; padding: 20px;">
+        <p>✓ Alpine initialized!</p>
+        <p>User: <span x-text="user || 'null'"></span></p>
+        <p>Current View: <span x-text="currentView"></span></p>
+        
+        <template x-if="!user">
+            <div style="background: lightgreen; padding: 10px;">
+                ✓ !user condition works (showing because user is null)
+            </div>
+        </template>
+        
+        <template x-if="user">
+            <div style="background: lightcoral; padding: 10px;">
+                ✗ This should NOT show (user is null)
+            </div>
+        </template>
+    </div>
+    
+    <script>
+        // Debug output function
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            document.getElementById('debug').appendChild(div);
+            console.log(msg);
+        }
+        
+        // Catch all errors
+        window.addEventListener('error', (e) => {
+            log(`ERROR: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`UNHANDLED REJECTION: ${e.reason}`, 'error');
+        });
+        
+        // Simple app function
+        function simpleApp() {
+            log('simpleApp() called', 'success');
+            try {
+                const app = {
+                    user: null,
+                    currentView: 'home',
+                    darkMode: false,
+                    init() {
+                        log('init() called', 'success');
+                    }
+                };
+                log('App object created successfully', 'success');
+                return app;
+            } catch (error) {
+                log(`Error in simpleApp(): ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Test that the function works
+        log('Testing simpleApp() before Alpine loads...');
+        try {
+            const test = simpleApp();
+            log(`✓ simpleApp() returns: ${JSON.stringify(Object.keys(test))}`, 'success');
+        } catch (e) {
+            log(`✗ simpleApp() failed: ${e.message}`, 'error');
+        }
+        
+        // Alpine events
+        document.addEventListener('alpine:init', () => {
+            log('Alpine:init event', 'success');
+        });
+        
+        document.addEventListener('alpine:initialized', () => {
+            log('Alpine:initialized event', 'success');
+        });
+        
+        setTimeout(() => {
+            if (window.Alpine) {
+                log(`✓ Alpine loaded (v${Alpine.version})`, 'success');
+            } else {
+                log('✗ Alpine not loaded after 2 seconds', 'error');
+            }
+        }, 2000);
+    </script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</body>
+</html>

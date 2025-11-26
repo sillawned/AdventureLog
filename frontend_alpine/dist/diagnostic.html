@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alpine Diagnostic</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Alpine.js Diagnostic Tool</h1>
+    
+    <div id="status-container"></div>
+    
+    <h2>Actual App:</h2>
+    <div style="border: 2px solid #ccc; padding: 20px; min-height: 300px;">
+        <div x-data="testApp()" x-cloak>
+            <p>✓ Alpine is working</p>
+            <p>User: <span x-text="user || 'null'"></span></p>
+            <template x-if="!user">
+                <p style="color: green;">✓ !user condition works</p>
+            </template>
+        </div>
+    </div>
+    
+    <script>
+        function addStatus(type, message) {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            document.getElementById('status-container').appendChild(div);
+        }
+        
+        addStatus('warning', 'Starting Alpine.js diagnostic...');
+        
+        // Test function
+        function testApp() {
+            addStatus('success', 'testApp() function called successfully');
+            try {
+                const state = {
+                    user: null,
+                    darkMode: false,
+                    test: 'works'
+                };
+                addStatus('success', 'State object created successfully');
+                return state;
+            } catch (error) {
+                addStatus('error', `Error in testApp(): ${error.message}`);
+                throw error;
+            }
+        }
+        
+        // Monitor Alpine loading
+        window.addEventListener('alpine:init', () => {
+            addStatus('success', 'Alpine:init event fired');
+        });
+        
+        window.addEventListener('alpine:initialized', () => {
+            addStatus('success', 'Alpine:initialized event fired');
+        });
+        
+        // Check after delay
+        setTimeout(() => {
+            if (window.Alpine) {
+                addStatus('success', `Alpine loaded (version: ${Alpine.version})`);
+            } else {
+                addStatus('error', 'Alpine failed to load after 2 seconds');
+            }
+        }, 2000);
+    </script>
+    
+    <style>[x-cloak] { display: none !important; }</style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</body>
+</html>
