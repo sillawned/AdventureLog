@@ -9,6 +9,7 @@ Supports watch mode for development with auto-rebuild on file changes.
 import os
 import sys
 import time
+import shutil
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
@@ -17,6 +18,8 @@ from jinja2 import Environment, FileSystemLoader
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 OUTPUT_DIR = Path(__file__).parent / "dist"
 OUTPUT_FILE = OUTPUT_DIR / "index.html"
+STATIC_SRC = TEMPLATES_DIR / "static"
+STATIC_DEST = OUTPUT_DIR / "static"
 API_URL = os.getenv("API_URL", "http://localhost:8000/api")
 
 
@@ -27,7 +30,8 @@ def build_template():
         env = Environment(
             loader=FileSystemLoader(str(TEMPLATES_DIR)),
             trim_blocks=True,
-            lstrip_blocks=True
+            lstrip_blocks=True,
+            autoescape=False  # Disable autoescape to prevent escaping $ in JavaScript
         )
         
         # Load base template
@@ -42,6 +46,12 @@ def build_template():
         
         # Ensure output directory exists
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # Copy static files
+        if STATIC_SRC.exists():
+            if STATIC_DEST.exists():
+                shutil.rmtree(STATIC_DEST)
+            shutil.copytree(STATIC_SRC, STATIC_DEST)
         
         # Write output
         with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
