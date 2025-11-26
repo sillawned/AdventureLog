@@ -3,29 +3,49 @@
     <div class="flex justify-between items-center mb-4">
         <h2>Visits History</h2>
     </div>
-    
+
+    <!-- Edit Visit Modal -->
+    <div x-show="showEditVisit" class="modal-overlay" @click.self="showEditVisit = false; editingVisitId = null">
+        <div class="modal-content" @click.stop>
+            <div class="modal-header">
+                <h3>Edit Visit</h3>
+                <button @click="showEditVisit = false; editingVisitId = null" class="btn-close">×</button>
+            </div>
+            <form @submit.prevent="updateVisit()">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" x-model="visitForm.start_date" required>
+                </div>
+                <div class="form-group">
+                    <label>End Date (optional)</label>
+                    <input type="date" x-model="visitForm.end_date">
+                </div>
+                <div class="form-group">
+                    <label>Timezone (e.g., Europe/Paris)</label>
+                    <input type="text" x-model="visitForm.timezone" placeholder="Optional timezone">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea x-model="visitForm.notes" rows="3" placeholder="Optional visit notes"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" @click="showEditVisit = false; editingVisitId = null" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Visit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Visits List -->
     <div class="space-y-3">
         <template x-for="visit in allVisits" :key="visit.id">
-            <div class="card">
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-2">
-                            <h3 x-text="visit.location?.name || 'Unknown Location'"></h3>
-                            <span x-show="visit.location?.city" class="text-sm text-muted" x-text="visit.location?.city + (visit.location?.country ? ', ' + visit.location.country : '')"></span>
-                        </div>
-                        <div class="space-y-1">
-                            <p class="text-light">
-                                📅 <span x-text="visit.start_date ? new Date(visit.start_date + 'T00:00:00').toLocaleDateString() : 'No date'"></span>
-                                <span x-show="visit.end_date"> → <span x-text="new Date(visit.end_date + 'T00:00:00').toLocaleDateString()"></span></span>
-                            </p>
-                        </div>
-                    </div>
-                    <button @click="deleteVisit(visit.id)" class="btn-icon btn-danger">🗑️</button>
-                </div>
-            </div>
+            <visit-card x-bind:locationname="visit.location?.name || 'Unknown Location'"
+                x-bind:city="visit.location?.city || ''" x-bind:country="visit.location?.country || ''"
+                x-bind:startdate="visit.start_date || ''" x-bind:enddate="visit.end_date || ''"
+                x-bind:timezone="visit.timezone || ''" x-bind:notes="visit.notes || ''" showactions="true"
+                showlocation="true" x-init="$el.addEventListener('delete', () => deleteVisit(visit.id))"
+                @dblclick="openEditVisit(visit)" style="cursor: pointer;"></visit-card>
         </template>
-        
         <template x-if="allVisits.length === 0">
             <div class="card text-center">
                 <p class="text-light">No visits recorded yet. Add visits from location details!</p>

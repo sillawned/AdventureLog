@@ -3,27 +3,31 @@
     <div class="container">
         <a href="#" @click.prevent="currentView = (user ? 'dashboard' : 'home')" class="logo">🌍 AdventureLog</a>
         <nav class="nav">
-            <div x-show="!user" class="flex gap-2 items-center">
-                <button @click="toggleTheme()" class="btn btn-outline" title="Toggle theme">
-                    <span x-text="darkMode ? '☀️' : '🌙'"></span>
-                </button>
-                <a href="#" @click.prevent="currentView = 'login'" class="btn btn-outline">Login</a>
-                <a href="#" @click.prevent="currentView = 'register'" class="btn btn-primary">Sign Up</a>
-            </div>
-            <div x-show="user" class="flex gap-2 items-center">
-                <span x-text="user ? 'Hello, ' + user.username : ''"></span>
-                <a href="#" @click.prevent="currentView = 'dashboard'">Dashboard</a>
-                <a href="#" @click.prevent="currentView = 'locations'">Locations</a>
-                <a href="#" @click.prevent="currentView = 'collections'">Collections</a>
-                <a href="#" @click.prevent="currentView = 'worldtravel'">World Travel</a>
-                <a href="#" @click.prevent="currentView = 'search'">Search</a>
-                <a href="#" @click.prevent="currentView = 'calendar'; loadCalendarEvents()">Calendar</a>
-                <a href="#" @click.prevent="currentView = 'settings'">Settings</a>
-                <button @click="toggleTheme()" class="btn btn-outline" title="Toggle theme">
-                    <span x-text="darkMode ? '☀️' : '🌙'"></span>
-                </button>
-                <button @click="logout()" class="btn btn-outline">Logout</button>
-            </div>
+            <template x-if="!user">
+                <div class="flex gap-2 items-center">
+                    <button @click="toggleTheme()" class="btn btn-outline" title="Toggle theme">
+                        <span x-text="darkMode ? '☀️' : '🌙'"></span>
+                    </button>
+                    <a href="#" @click.prevent="currentView = 'login'" class="btn btn-outline">Login</a>
+                    <a href="#" @click.prevent="currentView = 'register'" class="btn btn-primary">Sign Up</a>
+                </div>
+            </template>
+            <template x-if="user">
+                <div class="flex gap-2 items-center">
+                    <span x-text="user ? 'Hello, ' + user.username : ''"></span>
+                    <a href="#" @click.prevent="currentView = 'dashboard'">Dashboard</a>
+                    <a href="#" @click.prevent="currentView = 'locations'">Locations</a>
+                    <a href="#" @click.prevent="currentView = 'collections'">Collections</a>
+                    <a href="#" @click.prevent="currentView = 'worldtravel'">World Travel</a>
+                    <a href="#" @click.prevent="currentView = 'search'">Search</a>
+                    <a href="#" @click.prevent="currentView = 'calendar'; loadCalendarEvents()">Calendar</a>
+                    <a href="#" @click.prevent="currentView = 'settings'">Settings</a>
+                    <button @click="toggleTheme()" class="btn btn-outline" title="Toggle theme">
+                        <span x-text="darkMode ? '☀️' : '🌙'"></span>
+                    </button>
+                    <button @click="logout()" class="btn btn-outline">Logout</button>
+                </div>
+            </template>
         </nav>
     </div>
 </header>

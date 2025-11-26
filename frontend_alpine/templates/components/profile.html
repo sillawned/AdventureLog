@@ -138,16 +138,14 @@
 
             <div x-show="profileLocations && profileLocations.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 <template x-for="location in profileLocations" :key="location.id">
-                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewLocation(location.id)">
-                        <figure x-show="location.featured_image" class="h-48">
-                            <img :src="location.featured_image" :alt="location.name" class="w-full h-full object-cover">
-                        </figure>
-                        <div class="card-body">
-                            <h3 class="card-title" x-text="location.name"></h3>
-                            <p class="text-sm text-base-content/70" x-show="location.location" x-text="location.location"></p>
-                            <div x-show="location.activity_type" class="badge badge-outline" x-text="location.activity_type"></div>
-                        </div>
-                    </div>
+                    <location-card
+                        x-bind:name="location.name"
+                        x-bind:location="location.location || ''"
+                        x-bind:image="location.featured_image || ''"
+                        x-bind:activitytype="location.activity_type || ''"
+                        variant="profile"
+                        @view="viewLocation(location.id)"
+                    ></location-card>
                 </template>
             </div>
         </div>

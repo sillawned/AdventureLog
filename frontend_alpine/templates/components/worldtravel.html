@@ -1,5 +1,7 @@
 <!-- WorldTravel View -->
-<div x-show="currentView === 'worldtravel'" class="worldtravel-container">
+<div x-show="currentView === 'worldtravel'" class="worldtravel-container" 
+     x-init="$watch('worldTravelShowMap', value => { if (value) $nextTick(() => initWorldTravelMap()) });
+             $watch('filteredCountries', () => { if (worldTravelShowMap) updateWorldTravelMapMarkers() })">
     
     <!-- Countries List View -->
     <div x-show="worldTravelMode === 'countries'" class="worldtravel-view">
@@ -10,21 +12,25 @@
                 <div>
                     <h1 class="text-3xl font-bold">Country List</h1>
                     <p class="text-sm text-muted">
-                        <span x-text="filteredCountries.length"></span> of <span x-text="countries.length"></span> countries
+                        <span x-text="(filteredCountries || []).length"></span> of <span x-text="(countries || []).length"></span> countries
                     </p>
                 </div>
             </div>
 
             <!-- Quick Stats -->
             <div class="worldtravel-quick-stats">
-                <div class="stat-box stat-success">
-                    <div class="stat-label">Visited</div>
-                    <div class="stat-value" x-text="visitedCountriesCount"></div>
-                </div>
-                <div class="stat-box stat-error">
-                    <div class="stat-label">Remaining</div>
-                    <div class="stat-value" x-text="notVisitedCountriesCount"></div>
-                </div>
+                <stats-card 
+                    label="Visited" 
+                    x-bind:value="String(visitedCountriesCount || 0)" 
+                    variant="success"
+                    icon="✓"
+                ></stats-card>
+                <stats-card 
+                    label="Remaining" 
+                    x-bind:value="String(notVisitedCountriesCount || 0)" 
+                    variant="error"
+                    icon="🌍"
+                ></stats-card>
             </div>
         </div>
 
@@ -96,6 +102,23 @@
                     ✕ Clear All
                 </button>
             </template>
+
+            <!-- Map Toggle Button -->
+            <button @click="worldTravelShowMap = !worldTravelShowMap" class="btn btn-outline btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                <span x-text="worldTravelShowMap ? 'Hide Map' : 'Show Map'"></span>
+            </button>
+        </div>
+
+        <!-- Map Section -->
+        <div x-show="worldTravelShowMap" class="worldtravel-map-container" style="padding: 1.5rem;">
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body p-4">
+                    <div id="world-travel-map" style="width: 100%; height: 500px; border-radius: 0.5rem;"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Countries Grid -->
@@ -113,43 +136,14 @@
         <template x-if="filteredCountries.length > 0">
             <div class="worldtravel-grid">
                 <template x-for="country in filteredCountries" :key="country.id">
-                    <div class="country-card" @click="viewCountryDetails(country)">
-                        <div class="country-flag">
-                            <img 
-                                :src="`https://flagpedia.net/data/flags/w580/${country.country_code.toLowerCase()}.webp`" 
-                                :alt="country.name + ' flag'"
-                                @error="$event.target.style.display='none'"
-                            >
-                        </div>
-                        <div class="country-info">
-                            <h3 x-text="country.name"></h3>
-                            <p class="country-meta">
-                                <span x-text="country.country_code"></span>
-                                <template x-if="country.capital">
-                                    <span> • <span x-text="country.capital"></span></span>
-                                </template>
-                            </p>
-                            <div class="country-stats">
-                                <span class="stat-badge" x-text="country.num_regions + ' regions'"></span>
-                                <template x-if="country.num_visits > 0">
-                                    <span class="stat-badge stat-visited" x-text="country.num_visits + ' visited'"></span>
-                                </template>
-                                <template x-if="country.num_visits === country.num_regions && country.num_regions > 0">
-                                    <span class="stat-badge stat-complete">✓ Complete</span>
-                                </template>
-                            </div>
-                            <!-- Progress Bar -->
-                            <template x-if="country.num_regions > 0">
-                                <div class="country-progress">
-                                    <div 
-                                        class="country-progress-bar" 
-                                        :style="`width: ${(country.num_visits / country.num_regions * 100)}%`"
-                                        :class="country.num_visits === country.num_regions ? 'complete' : ''"
-                                    ></div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
+                    <country-card
+                        x-bind:name="country.name"
+                        x-bind:countrycode="country.country_code || ''"
+                        x-bind:capital="country.capital || ''"
+                        x-bind:numregions="String(country.num_regions || 0)"
+                        x-bind:numvisits="String(country.num_visits || 0)"
+                        @cardclick="viewCountryDetails(country)"
+                    ></country-card>
                 </template>
             </div>
         </template>
@@ -242,7 +236,7 @@
             <div class="country-detail-header">
                 <div class="country-flag-large">
                     <img 
-                        :src="`https://flagpedia.net/data/flags/w580/${selectedCountry?.country_code.toLowerCase()}.webp`" 
+                        :src="selectedCountry?.country_code ? `https://flagpedia.net/data/flags/w580/${selectedCountry.country_code.toLowerCase()}.webp` : ''" 
                         :alt="selectedCountry?.name + ' flag'"
                         @error="$event.target.style.display='none'"
                     >

@@ -47,7 +47,7 @@
         <!-- Empty State -->
         <div x-show="!searchResults || searchResultsCount === 0" class="flex flex-col items-center justify-center py-16">
             <div class="p-6 bg-base-200/50 rounded-2xl mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
@@ -58,7 +58,7 @@
         </div>
 
         <!-- Locations Results -->
-        <div x-show="searchResults && searchResults.locations && searchResults.locations.length > 0" class="mb-12">
+        <div x-show="searchResults?.locations?.length > 0" class="mb-12">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-primary/10 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,10 +67,10 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold">Locations</h2>
-                <div class="badge badge-primary" x-text="searchResults.locations.length"></div>
+                <div class="badge badge-primary" x-text="searchResults?.locations?.length || 0"></div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <template x-for="location in searchResults.locations" :key="location.id">
+                <template x-for="location in (searchResults?.locations || [])" :key="location.id">
                     <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewLocation(location.id)">
                         <figure x-show="location.featured_image" class="h-48">
                             <img :src="location.featured_image" :alt="location.name" class="w-full h-full object-cover">
@@ -86,7 +86,7 @@
         </div>
 
         <!-- Collections Results -->
-        <div x-show="searchResults && searchResults.collections && searchResults.collections.length > 0" class="mb-12">
+        <div x-show="searchResults?.collections?.length > 0" class="mb-12">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-secondary/10 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,10 +94,10 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold">Collections</h2>
-                <div class="badge badge-secondary" x-text="searchResults.collections.length"></div>
+                <div class="badge badge-secondary" x-text="searchResults?.collections?.length || 0"></div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <template x-for="collection in searchResults.collections" :key="collection.id">
+                <template x-for="collection in (searchResults?.collections || [])" :key="collection.id">
                     <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewCollection(collection.id)">
                         <div class="card-body">
                             <h3 class="card-title" x-text="collection.name"></h3>
@@ -110,7 +110,7 @@
         </div>
 
         <!-- Countries Results -->
-        <div x-show="searchResults && searchResults.countries && searchResults.countries.length > 0" class="mb-12">
+        <div x-show="searchResults?.countries?.length > 0" class="mb-12">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-accent/10 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,10 +118,10 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold">Countries</h2>
-                <div class="badge badge-accent" x-text="searchResults.countries.length"></div>
+                <div class="badge badge-accent" x-text="searchResults?.countries?.length || 0"></div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <template x-for="country in searchResults.countries" :key="country.id">
+                <template x-for="country in (searchResults?.countries || [])" :key="country.id">
                     <div class="country-card cursor-pointer" @click="viewCountry(country.id)">
                         <img :src="`https://flagcdn.com/w320/${country.code.toLowerCase()}.png`" :alt="country.name" class="country-flag">
                         <div class="country-info">
@@ -133,7 +133,7 @@
         </div>
 
         <!-- Regions Results -->
-        <div x-show="searchResults && searchResults.regions && searchResults.regions.length > 0" class="mb-12">
+        <div x-show="searchResults?.regions?.length > 0" class="mb-12">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-info/10 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -141,10 +141,10 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold">Regions</h2>
-                <div class="badge badge-info" x-text="searchResults.regions.length"></div>
+                <div class="badge badge-info" x-text="searchResults?.regions?.length || 0"></div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <template x-for="region in searchResults.regions" :key="region.id">
+                <template x-for="region in (searchResults?.regions || [])" :key="region.id">
                     <div class="region-card cursor-pointer" @click="viewRegion(region.country_id, region.id)">
                         <div class="region-card-header">
                             <h3 class="region-name" x-text="region.name"></h3>
@@ -155,7 +155,7 @@
         </div>
 
         <!-- Cities Results -->
-        <div x-show="searchResults && searchResults.cities && searchResults.cities.length > 0" class="mb-12">
+        <div x-show="searchResults?.cities?.length > 0" class="mb-12">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-warning/10 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -163,10 +163,10 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold">Cities</h2>
-                <div class="badge badge-warning" x-text="searchResults.cities.length"></div>
+                <div class="badge badge-warning" x-text="searchResults?.cities?.length || 0"></div>
             </div>
             <div class="cities-grid">
-                <template x-for="city in searchResults.cities" :key="city.id">
+                <template x-for="city in (searchResults?.cities || [])" :key="city.id">
                     <div class="city-card">
                         <h3 class="city-name" x-text="city.name"></h3>
                     </div>
@@ -175,7 +175,7 @@
         </div>
 
         <!-- Users Results -->
-        <div x-show="searchResults && searchResults.users && searchResults.users.length > 0" class="mb-12">
+        <div x-show="searchResults?.users?.length > 0" class="mb-12">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-success/10 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,10 +183,10 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold">Users</h2>
-                <div class="badge badge-success" x-text="searchResults.users.length"></div>
+                <div class="badge badge-success" x-text="searchResults?.users?.length || 0"></div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <template x-for="user in searchResults.users" :key="user.id">
+                <template x-for="user in (searchResults?.users || [])" :key="user.id">
                     <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer" @click="viewProfile(user.id)">
                         <div class="card-body items-center text-center">
                             <div class="avatar">

@@ -28,6 +28,37 @@
             <button type="submit" class="btn btn-primary">Create Category</button>
         </form>
     </div>
+
+    <!-- Edit Category Modal -->
+    <div x-show="showEditCategory" class="modal-overlay" @click.self="showEditCategory = false; editingCategoryId = null">
+        <div class="modal-content" @click.stop>
+            <div class="modal-header">
+                <h3>Edit Category</h3>
+                <button @click="showEditCategory = false; editingCategoryId = null" class="btn-close">×</button>
+            </div>
+            <form @submit.prevent="updateCategory()">
+                <div class="form-group">
+                    <label>Name*</label>
+                    <input type="text" x-model="categoryForm.name" required>
+                </div>
+                <div class="form-group">
+                    <label>Icon (optional)</label>
+                    <input type="text" x-model="categoryForm.icon" placeholder="🏔️">
+                    <small class="text-light">Enter an emoji or icon character</small>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" x-model="categoryForm.is_public">
+                        Make public
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" @click="showEditCategory = false; editingCategoryId = null" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <!-- Search Bar -->
     <div x-show="!showAddCategory && categories.length > 0" class="card mb-4">
@@ -47,18 +78,15 @@
     <!-- Categories Grid -->
     <div class="grid grid-3 gap-4">
         <template x-for="category in filteredCategories" :key="category.id">
-            <div class="card">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex items-center gap-2">
-                        <span x-text="category.icon || '📁'" style="font-size: 1.5rem;"></span>
-                        <h3 x-text="category.name"></h3>
-                    </div>
-                    <button @click="deleteCategory(category.id)" class="btn-icon btn-danger">🗑️</button>
-                </div>
-                <div class="flex gap-2 mt-2">
-                    <span class="badge" x-text="category.is_public ? 'Public' : 'Private'"></span>
-                </div>
-            </div>
+            <category-card
+                x-bind:name="category.name"
+                x-bind:icon="category.icon || '📁'"
+                x-bind:ispublic="String(!!category.is_public)"
+                showactions="true"
+                x-init="$el.addEventListener('delete', () => deleteCategory(category.id))"
+                @dblclick="openEditCategory(category)"
+                style="cursor: pointer;"
+            ></category-card>
         </template>
         
         <template x-if="filteredCategories.length === 0 && categories.length > 0">

@@ -59,26 +59,65 @@
                     </p>
                 </div>
 
+                <!-- Edit Collection Modal -->
+                <div x-show="showEditCollection" class="modal-overlay" @click.self="showEditCollection = false; editingCollectionId = null">
+                    <div class="modal-content" @click.stop>
+                        <div class="modal-header">
+                            <h3>Edit Collection</h3>
+                            <button @click="showEditCollection = false; editingCollectionId = null" class="btn-close">×</button>
+                        </div>
+                        <form @submit.prevent="updateCollection()">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" x-model="collectionForm.name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea x-model="collectionForm.description" rows="3" placeholder="Describe this collection"></textarea>
+                            </div>
+                            <div class="grid grid-2">
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" x-model="collectionForm.start_date">
+                                </div>
+                                <div class="form-group">
+                                    <label>End Date</label>
+                                    <input type="date" x-model="collectionForm.end_date">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>External Link</label>
+                                <input type="url" x-model="collectionForm.link" placeholder="https://example.com/info">
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" x-model="collectionForm.is_public" id="edit-coll-public">
+                                    <label for="edit-coll-public">Make public</label>
+                                </div>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" @click="showEditCollection = false; editingCollectionId = null" class="btn btn-secondary">Cancel</button>
+                                <button type="submit" class="btn btn-primary" :disabled="loading">Update Collection</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Collections List -->
                 <div class="grid grid-3">
                     <template x-for="collection in filteredCollections" :key="collection.id">
-                        <div class="card">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 x-text="collection.name"></h4>
-                                    <p class="text-sm" x-show="collection.description" x-text="collection.description"></p>
-                                    <p class="text-xs text-muted" x-show="collection.start_date || collection.end_date">
-                                        <span x-show="collection.start_date" x-text="new Date(collection.start_date).toLocaleDateString()"></span>
-                                        <span x-show="collection.end_date"> → <span x-text="new Date(collection.end_date).toLocaleDateString()"></span></span>
-                                    </p>
-                                    <p class="text-xs" x-show="collection.link">
-                                        🔗 <a :href="collection.link" target="_blank" rel="noopener" style="color: var(--link);">Link</a>
-                                    </p>
-                                    <p class="text-sm text-muted" x-text="(collection.locations?.length || 0) + ' locations'"></p>
-                                </div>
-                                <button @click="deleteCollection(collection.id)" class="btn btn-sm btn-danger">Delete</button>
-                            </div>
-                        </div>
+                        <collection-card
+                            x-bind:name="collection.name"
+                            x-bind:description="collection.description || ''"
+                            x-bind:startdate="collection.start_date || ''"
+                            x-bind:enddate="collection.end_date || ''"
+                            x-bind:link="collection.link || ''"
+                            x-bind:locationscount="String(collection.locations?.length || 0)"
+                            showactions="true"
+                            x-init="$el.addEventListener('delete', () => deleteCollection(collection.id)); $el.addEventListener('view', () => viewCollection(collection.id))"
+                            @dblclick="openEditCollection(collection)"
+                            style="cursor: pointer;"
+                        ></collection-card>
                     </template>
                     
                     <template x-if="filteredCollections.length === 0 && collections.length > 0">

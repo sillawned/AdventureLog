@@ -1,0 +1,55 @@
+<!-- Collection Detail View -->
+            <div x-show="currentView === 'collection-detail' && selectedCollection">
+                <button @click="currentView = 'collections'" class="btn btn-outline mb-4">← Back to Collections</button>
+                
+                <div class="card">
+                    <div class="collection-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+                        <div style="flex: 1;">
+                            <h2 x-text="selectedCollection?.name"></h2>
+                            <p x-show="selectedCollection?.description" style="margin-top: 0.75rem; white-space: pre-wrap; color: var(--text-muted);" x-text="selectedCollection?.description"></p>
+                            
+                            <div style="margin-top: 1rem; display: flex; flex-wrap: gap: 1rem; font-size: 0.875rem; color: var(--text-muted);">
+                                <span x-show="selectedCollection?.start_date || selectedCollection?.end_date">
+                                    📅 
+                                    <span x-text="selectedCollection?.start_date ? new Date(selectedCollection.start_date).toLocaleDateString() : 'Start'"></span>
+                                    <span x-show="selectedCollection?.end_date"> - <span x-text="new Date(selectedCollection.end_date).toLocaleDateString()"></span></span>
+                                </span>
+                                <span x-show="selectedCollection?.link">
+                                    🔗 <a :href="selectedCollection?.link" target="_blank" rel="noopener" style="color: var(--link);">External Link</a>
+                                </span>
+                                <span>
+                                    📍 <strong x-text="selectedCollection?.locations?.length || 0"></strong> locations
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button @click="openEditCollection(selectedCollection)" class="btn btn-secondary">✏️ Edit</button>
+                            <button @click="deleteCollection(selectedCollection.id); currentView = 'collections'" class="btn btn-danger">🗑️ Delete</button>
+                        </div>
+                    </div>
+
+                    <!-- Locations in this Collection -->
+                    <div>
+                        <h3 class="mb-4">Locations</h3>
+                        
+                        <div class="grid grid-3">
+                            <template x-for="location in selectedCollection?.locations || []" :key="location.id">
+                                <location-card
+                                    x-bind:name="location.name"
+                                    x-bind:city="location.city || ''"
+                                    x-bind:country="location.country || ''"
+                                    x-bind:rating="String(location.rating || 0)"
+                                    x-bind:category="location.category?.name || ''"
+                                    x-bind:categorycolor="location.category?.color || ''"
+                                    x-bind:tags="JSON.stringify(location.tags || [])"
+                                    showactions="false"
+                                    variant="profile"
+                                    x-init="$el.addEventListener('view', () => viewLocationFromCollection(location.id))"
+                                ></location-card>
+                            </template>
+                        </div>
+                        
+                        <p x-show="!selectedCollection?.locations || selectedCollection?.locations?.length === 0" class="text-muted">No locations in this collection yet.</p>
+                    </div>
+                </div>
+            </div>

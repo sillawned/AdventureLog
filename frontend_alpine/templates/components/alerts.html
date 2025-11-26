@@ -1,3 +1,3 @@
 <!-- Alerts -->
-<div x-show="error" x-transition class="alert alert-error" x-text="error"></div>
-<div x-show="success" x-transition class="alert alert-success" x-text="success"></div>
+<div x-show="error && error.length > 0" x-transition class="alert alert-error" x-text="error"></div>
+<div x-show="success && success.length > 0" x-transition class="alert alert-success" x-text="success"></div>

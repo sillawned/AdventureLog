@@ -12,7 +12,7 @@
                                 📋 List
                             </button>
                             <button 
-                                @click="locationsViewMode = 'map'; $nextTick(() => initMap())" 
+                                @click="locationsViewMode = 'map'" 
                                 class="btn btn-sm"
                                 :class="locationsViewMode === 'map' ? 'btn-primary' : 'btn-outline'"
                             >
@@ -295,39 +295,41 @@
 
                 <!-- Map View -->
                 <div x-show="locationsViewMode === 'map' && !showAddLocation" class="card" style="padding: 0; overflow: hidden;">
-                    <div id="locations-map" style="height: 600px; width: 100%;"></div>
+                    <!-- Svelte Web Component Map -->
+                    <adventure-map 
+                        x-ref="adventureMap"
+                        :locations="JSON.stringify(filteredLocations.map(loc => ({
+                            id: loc.id,
+                            name: loc.name,
+                            latitude: loc.latitude,
+                            longitude: loc.longitude,
+                            city: loc.city,
+                            country: loc.country,
+                            visited: loc.visited
+                        })))"
+                        center="[20, 0]"
+                        zoom="2"
+                        style="height: 600px; width: 100%;"
+                        @location-selected="viewLocation(filteredLocations.find(l => l.id === $event.detail))"
+                    ></adventure-map>
                 </div>
 
                 <!-- Locations List -->
                 <div x-show="locationsViewMode === 'list' && !showAddLocation">
                     <div class="grid grid-3">
                         <template x-for="location in paginatedLocations" :key="location.id">
-                            <div class="card">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h4 x-text="location.name"></h4>
-                                        <p class="text-sm text-muted">
-                                            <span x-text="location.city"></span><span x-show="location.city && location.country">, </span><span x-text="location.country"></span>
-                                        </p>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button @click="viewLocation(location)" class="btn btn-sm btn-outline">View</button>
-                                        <button @click="deleteLocation(location.id)" class="btn btn-sm btn-danger">Delete</button>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2 mb-2" x-show="location.category || location.collection">
-                                    <span x-show="location.category" class="badge" x-text="location.category?.name" :style="'background-color: ' + (location.category?.color || '#6c757d')"></span>
-                                    <span x-show="location.collection" class="badge badge-secondary" x-text="location.collection?.name"></span>
-                                </div>
-                                <div x-show="location.rating" class="text-sm mb-2">
-                                    <span x-text="'⭐'.repeat(location.rating)"></span>
-                                </div>
-                                <div x-show="location.tags && location.tags.length" class="flex flex-wrap gap-1">
-                                    <template x-for="tag in location.tags" :key="tag">
-                                        <span class="badge" x-text="tag"></span>
-                                    </template>
-                                </div>
-                            </div>
+                            <location-card
+                                x-bind:name="location.name"
+                                x-bind:city="location.city || ''"
+                                x-bind:country="location.country || ''"
+                                x-bind:rating="String(location.rating || 0)"
+                                x-bind:category="location.category?.name || ''"
+                                x-bind:categorycolor="location.category?.color || ''"
+                                x-bind:collection="location.collection?.name || ''"
+                                x-bind:tags="JSON.stringify(location.tags || [])"
+                                showactions="true"
+                                x-init="$el.addEventListener('view', () => viewLocation(location)); $el.addEventListener('delete', () => deleteLocation(location.id))"
+                            ></location-card>
                         </template>
                         
                         <template x-if="filteredLocations.length === 0 && locations.length > 0">

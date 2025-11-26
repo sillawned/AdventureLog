@@ -3,22 +3,30 @@
                 <h2 style="margin-bottom: 1.5rem;">Dashboard</h2>
                 
                 <div class="stats-grid" x-show="stats">
-                    <div class="stat-card">
-                        <h3 x-text="stats?.total_locations || 0"></h3>
-                        <p>Total Locations</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 x-text="stats?.total_visits || 0"></h3>
-                        <p>Total Visits</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 x-text="stats?.total_collections || 0"></h3>
-                        <p>Collections</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 x-text="stats?.countries_visited || 0"></h3>
-                        <p>Countries</p>
-                    </div>
+                    <stats-card 
+                        label="Total Locations" 
+                        x-bind:value="String(stats?.total_locations || 0)"
+                        variant="info"
+                        icon="📍"
+                    ></stats-card>
+                    <stats-card 
+                        label="Total Visits" 
+                        x-bind:value="String(stats?.total_visits || 0)"
+                        variant="success"
+                        icon="✓"
+                    ></stats-card>
+                    <stats-card 
+                        label="Collections" 
+                        x-bind:value="String(stats?.total_collections || 0)"
+                        variant="warning"
+                        icon="📂"
+                    ></stats-card>
+                    <stats-card 
+                        label="Countries" 
+                        x-bind:value="String(stats?.countries_visited || 0)"
+                        variant="default"
+                        icon="🌍"
+                    ></stats-card>
                 </div>
 
                 <div class="flex justify-between items-center mb-4">

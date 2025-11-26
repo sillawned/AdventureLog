@@ -16,6 +16,14 @@
                             <p x-show="selectedLocation?.link" class="text-sm" style="margin-top: 0.5rem;">
                                 🔗 <a :href="selectedLocation?.link" target="_blank" rel="noopener" style="color: var(--link);">External Link</a>
                             </p>
+                            <div x-show="selectedLocation?.collection" class="flex items-center gap-2" style="margin-top: 0.75rem;">
+                                <span class="badge" style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem;">
+                                    📚 <span x-text="selectedLocation?.collection?.name"></span>
+                                </span>
+                                <button @click="removeFromCollection(selectedLocation.id)" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                    Remove
+                                </button>
+                            </div>
                         </div>
                         <button @click="startEditLocation()" class="btn btn-primary">✏️ Edit</button>
                     </div>
@@ -53,18 +61,94 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary">Add Note</button>
                             </form>
+                                                                        <!-- Edit Trail Modal -->
+                                                                        <div x-show="showEditTrail" class="modal-overlay" @click.self="showEditTrail = false; editingTrailId = null">
+                                                                            <div class="modal-content" @click.stop>
+                                                                                <div class="modal-header">
+                                                                                    <h3>Edit Trail</h3>
+                                                                                    <button @click="showEditTrail = false; editingTrailId = null" class="btn-close">×</button>
+                                                                                </div>
+                                                                                <form @submit.prevent="updateTrail()">
+                                                                                    <div class="form-group">
+                                                                                        <label>Trail Name</label>
+                                                                                        <input type="text" x-model="trailForm.name" required>
+                                                                                    </div>
+                                                                                    <div class="form-group">
+                                                                                        <label>Difficulty</label>
+                                                                                        <select x-model="trailForm.difficulty">
+                                                                                            <option value="">Select difficulty</option>
+                                                                                            <option value="easy">🟢 Easy</option>
+                                                                                            <option value="moderate">🟡 Moderate</option>
+                                                                                            <option value="hard">🔴 Hard</option>
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    <div class="form-group">
+                                                                                        <label>Length (km)</label>
+                                                                                        <input type="number" step="0.1" x-model="trailForm.length">
+                                                                                    </div>
+                                                                                    <div class="modal-actions">
+                                                                                        <button type="button" @click="showEditTrail = false; editingTrailId = null" class="btn btn-secondary">Cancel</button>
+                                                                                        <button type="submit" class="btn btn-primary">Update Trail</button>
+                                                                                    </div>
+                                                                                </form>
+                                                                            </div>
+                                                                        </div>
+
+                                                <!-- Edit Lodging Modal -->
+                                                <div x-show="showEditLodging" class="modal-overlay" @click.self="showEditLodging = false; editingLodgingId = null">
+                                                    <div class="modal-content" @click.stop>
+                                                        <div class="modal-header">
+                                                            <h3>Edit Lodging</h3>
+                                                            <button @click="showEditLodging = false; editingLodgingId = null" class="btn-close">×</button>
+                                                        </div>
+                                                        <form @submit.prevent="updateLodging()">
+                                                            <div class="form-group">
+                                                                <label>Name</label>
+                                                                <input type="text" x-model="lodgingForm.name" placeholder="Hotel name, Airbnb, etc." required>
+                                                            </div>
+                                                            <div class="modal-actions">
+                                                                <button type="button" @click="showEditLodging = false; editingLodgingId = null" class="btn btn-secondary">Cancel</button>
+                                                                <button type="submit" class="btn btn-primary">Update Lodging</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                        </div>
+
+                        <!-- Edit Note Modal -->
+                        <div x-show="showEditNote" class="modal-overlay" @click.self="showEditNote = false; editingNoteId = null">
+                            <div class="modal-content" @click.stop>
+                                <div class="modal-header">
+                                    <h3>Edit Note</h3>
+                                    <button @click="showEditNote = false; editingNoteId = null" class="btn-close">×</button>
+                                </div>
+                                <form @submit.prevent="updateNote()">
+                                    <div class="form-group">
+                                        <label>Title</label>
+                                        <input type="text" x-model="noteForm.name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Content</label>
+                                        <textarea x-model="noteForm.content" rows="6"></textarea>
+                                    </div>
+                                    <div class="modal-actions">
+                                        <button type="button" @click="showEditNote = false; editingNoteId = null" class="btn btn-secondary">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Update Note</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
 
                         <template x-for="note in locationNotes" :key="note.id">
-                            <div class="card">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h4 x-text="note.name"></h4>
-                                        <p x-text="note.content" style="white-space: pre-wrap;"></p>
-                                    </div>
-                                    <button @click="deleteNote(note.id)" class="btn btn-sm btn-danger">Delete</button>
-                                </div>
-                            </div>
+                            <note-card
+                                x-bind:title="note.name"
+                                x-bind:content="note.content || ''"
+                                showactions="true"
+                                x-init="$el.addEventListener('delete', () => deleteNote(note.id))"
+                                @dblclick="openEditNote(note)"
+                                style="cursor: pointer;"
+                            ></note-card>
                         </template>
                         <p x-show="locationNotes.length === 0" class="text-muted">No notes yet.</p>
                     </div>
@@ -100,20 +184,51 @@
                                 <button type="submit" class="btn btn-primary">Add Visit</button>
                             </form>
                         </div>
+
+                        <!-- Edit Visit Modal -->
+                        <div x-show="showEditVisit" class="modal-overlay" @click.self="showEditVisit = false; editingVisitId = null">
+                            <div class="modal-content" @click.stop>
+                                <div class="modal-header">
+                                    <h3>Edit Visit</h3>
+                                    <button @click="showEditVisit = false; editingVisitId = null" class="btn-close">×</button>
+                                </div>
+                                <form @submit.prevent="updateVisit()">
+                                    <div class="form-group">
+                                        <label>Start Date</label>
+                                        <input type="date" x-model="visitForm.start_date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>End Date (optional)</label>
+                                        <input type="date" x-model="visitForm.end_date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Timezone (e.g., Europe/Paris)</label>
+                                        <input type="text" x-model="visitForm.timezone" placeholder="Optional timezone">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Notes</label>
+                                        <textarea x-model="visitForm.notes" rows="3" placeholder="Optional visit notes"></textarea>
+                                    </div>
+                                    <div class="modal-actions">
+                                        <button type="button" @click="showEditVisit = false; editingVisitId = null" class="btn btn-secondary">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Update Visit</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                         
                         <template x-for="visit in locationVisits" :key="visit.id">
-                            <div class="card">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="flex gap-2 items-center">
-                                            <span x-text="visit.start_date ? new Date(visit.start_date + 'T00:00:00').toLocaleDateString() : 'No date'"></span>
-                                            <span x-show="visit.end_date">→</span>
-                                            <span x-show="visit.end_date" x-text="visit.end_date ? new Date(visit.end_date + 'T00:00:00').toLocaleDateString() : ''"></span>
-                                        </div>
-                                    </div>
-                                    <button @click="deleteVisit(visit.id)" class="btn btn-sm btn-danger">Delete</button>
-                                </div>
-                            </div>
+                            <visit-card
+                                x-bind:startdate="visit.start_date || ''"
+                                x-bind:enddate="visit.end_date || ''"
+                                x-bind:timezone="visit.timezone || ''"
+                                x-bind:notes="visit.notes || ''"
+                                showactions="true"
+                                showlocation="false"
+                                x-init="$el.addEventListener('delete', () => deleteVisit(visit.id))"
+                                @dblclick="openEditVisit(visit)"
+                                style="cursor: pointer;"
+                            ></visit-card>
                         </template>
                         <p x-show="locationVisits.length === 0" class="text-muted">No visits recorded yet.</p>
                     </div>
@@ -142,16 +257,39 @@
                             </form>
                         </div>
 
-                        <template x-for="activity in locationActivities" :key="activity.id">
-                            <div class="card">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h4 x-text="activity.type"></h4>
-                                        <p class="text-sm text-muted" x-show="activity.date" x-text="new Date(activity.date).toLocaleDateString()"></p>
-                                    </div>
-                                    <button @click="deleteActivity(activity.id)" class="btn btn-sm btn-danger">Delete</button>
+                        <!-- Edit Activity Modal -->
+                        <div x-show="showEditActivity" class="modal-overlay" @click.self="showEditActivity = false; editingActivityId = null">
+                            <div class="modal-content" @click.stop>
+                                <div class="modal-header">
+                                    <h3>Edit Activity</h3>
+                                    <button @click="showEditActivity = false; editingActivityId = null" class="btn-close">×</button>
                                 </div>
+                                <form @submit.prevent="updateActivity()">
+                                    <div class="form-group">
+                                        <label>Type</label>
+                                        <input type="text" x-model="activityForm.type" placeholder="Hiking, Swimming, etc." required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Date</label>
+                                        <input type="date" x-model="activityForm.date">
+                                    </div>
+                                    <div class="modal-actions">
+                                        <button type="button" @click="showEditActivity = false; editingActivityId = null" class="btn btn-secondary">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Update Activity</button>
+                                    </div>
+                                </form>
                             </div>
+                        </div>
+
+                        <template x-for="activity in locationActivities" :key="activity.id">
+                            <activity-card
+                                x-bind:type="activity.type"
+                                x-bind:date="activity.date || ''"
+                                showactions="true"
+                                x-init="$el.addEventListener('delete', () => deleteActivity(activity.id))"
+                                @dblclick="openEditActivity(activity)"
+                                style="cursor: pointer;"
+                            ></activity-card>
                         </template>
                         <p x-show="locationActivities.length === 0" class="text-muted">No activities yet.</p>
                     </div>
@@ -309,24 +447,121 @@
                         </div>
 
                         <template x-for="transport in locationTransportation" :key="transport.id">
-                            <div class="card">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <span class="badge badge-blue" x-text="transport.type"></span>
-                                        <p class="text-sm" style="margin-top: 0.5rem;">
-                                            <span x-text="transport.from_location || 'Unknown'"></span> → <span x-text="transport.to_location || 'Unknown'"></span>
-                                        </p>
-                                        <p class="text-sm text-muted" x-show="transport.depart_time || transport.arrive_time">
-                                            <span x-show="transport.depart_time">🕒 <span x-text="new Date(transport.depart_time).toLocaleString()"></span></span>
-                                            <span x-show="transport.arrive_time"> → <span x-text="new Date(transport.arrive_time).toLocaleString()"></span></span>
-                                        </p>
-                                        <p class="text-sm" x-show="transport.link">
-                                            🔗 <a :href="transport.link" target="_blank" rel="noopener" style="color: var(--link);">Details</a>
-                                        </p>
-                                    </div>
-                                    <button @click="deleteTransportation(transport.id)" class="btn btn-sm btn-danger">Delete</button>
+
+                        <!-- Edit Transportation Modal -->
+                        <div x-show="showEditTransportation" class="modal-overlay" @click.self="showEditTransportation = false; editingTransportationId = null">
+                            <div class="modal-content" @click.stop>
+                                <div class="modal-header">
+                                    <h3>Edit Transportation</h3>
+                                    <button @click="showEditTransportation = false; editingTransportationId = null" class="btn-close">×</button>
                                 </div>
+                                <form @submit.prevent="updateTransportation()">
+                                    <div class="form-group">
+                                        <label>Type</label>
+                                        <select x-model="transportationForm.type" required>
+                                            <option value="">Select type</option>
+                                            <option value="plane">✈️ Plane</option>
+                                            <option value="train">🚂 Train</option>
+                                            <option value="bus">🚌 Bus</option>
+                                            <option value="car">🚗 Car</option>
+                                            <option value="boat">🚢 Boat</option>
+                                            <option value="bike">🚴 Bike</option>
+                                            <option value="walk">🚶 Walk</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>From</label>
+                                        <input type="text" x-model="transportationForm.from_location">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>To</label>
+                                        <input type="text" x-model="transportationForm.to_location">
+                                    </div>
+                                    <div class="grid grid-2">
+                                        <div class="form-group">
+                                            <label>Departure Time</label>
+                                            <input type="datetime-local" x-model="transportationForm.depart_time">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Arrival Time</label>
+                                            <input type="datetime-local" x-model="transportationForm.arrive_time">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-2">
+                                        <div class="form-group">
+                                            <label>Departure Timezone</label>
+                                            <input type="text" x-model="transportationForm.depart_timezone" placeholder="e.g., America/New_York">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Arrival Timezone</label>
+                                            <input type="text" x-model="transportationForm.arrive_timezone" placeholder="e.g., Europe/London">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-2">
+                                        <div class="form-group">
+                                            <label>Depart Latitude</label>
+                                            <input type="number" step="any" x-model="transportationForm.depart_latitude">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Depart Longitude</label>
+                                            <input type="number" step="any" x-model="transportationForm.depart_longitude">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-2">
+                                        <div class="form-group">
+                                            <label>Arrive Latitude</label>
+                                            <input type="number" step="any" x-model="transportationForm.arrive_latitude">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Arrive Longitude</label>
+                                            <input type="number" step="any" x-model="transportationForm.arrive_longitude">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External Link</label>
+                                        <input type="url" x-model="transportationForm.link" placeholder="Ticket link or reference">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Rating</label>
+                                        <select x-model="transportationForm.rating">
+                                            <option value="">No rating</option>
+                                            <option value="1">⭐ 1</option>
+                                            <option value="2">⭐⭐ 2</option>
+                                            <option value="3">⭐⭐⭐ 3</option>
+                                            <option value="4">⭐⭐⭐⭐ 4</option>
+                                            <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="checkbox-group">
+                                            <input type="checkbox" x-model="transportationForm.is_public" id="transport-public-edit">
+                                            <label for="transport-public-edit">Make public</label>
+                                        </div>
+                                    </div>
+                                    <div class="modal-actions">
+                                        <button type="button" @click="showEditTransportation = false; editingTransportationId = null" class="btn btn-secondary">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Update Transportation</button>
+                                    </div>
+                                </form>
                             </div>
+                        </div>
+
+                        <template x-for="transport in locationTransportation" :key="transport.id">
+                            <transportation-card
+                                x-bind:type="transport.type || ''"
+                                x-bind:fromlocation="transport.from_location || ''"
+                                x-bind:tolocation="transport.to_location || ''"
+                                x-bind:departtime="transport.depart_time || ''"
+                                x-bind:arrivetime="transport.arrive_time || ''"
+                                x-bind:departtimezone="transport.depart_timezone || ''"
+                                x-bind:arrivetimezone="transport.arrive_timezone || ''"
+                                x-bind:link="transport.link || ''"
+                                x-bind:rating="String(transport.rating || 0)"
+                                showactions="true"
+                                x-init="$el.addEventListener('delete', () => deleteTransportation(transport.id))"
+                                @dblclick="openEditTransportation(transport)"
+                                style="cursor: pointer;"
+                            ></transportation-card>
                         </template>
                         <p x-show="locationTransportation.length === 0" class="text-muted">No transportation records yet.</p>
                     </div>
@@ -352,7 +587,7 @@
                         </div>
 
                         <template x-for="lodging in locationLodging" :key="lodging.id">
-                            <div class="card">
+                            <div class="card" @dblclick="openEditLodging(lodging)" style="cursor: pointer;">
                                 <div class="flex justify-between items-start">
                                     <h4 x-text="lodging.name"></h4>
                                     <button @click="deleteLodging(lodging.id)" class="btn btn-sm btn-danger">Delete</button>
@@ -396,7 +631,7 @@
                         </div>
 
                         <template x-for="trail in locationTrails" :key="trail.id">
-                            <div class="card">
+                            <div class="card" @dblclick="openEditTrail(trail)" style="cursor: pointer;">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <h4 x-text="trail.name"></h4>
