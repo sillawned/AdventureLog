@@ -126,6 +126,52 @@ async def create_new_note(
     return NoteResponse.from_orm_note(note)
 
 
+@router.put("/{note_id}", response_model=NoteResponse)
+async def update_note(
+    note_id: str,
+    note_data: NoteCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update a note."""
+    
+    try:
+        note_uuid = uuid.UUID(note_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid note ID format"
+        )
+    
+    # Get note
+    from sqlalchemy import select
+    result = await db.execute(select(Note).where(Note.id == note_uuid))
+    note = result.scalar_one_or_none()
+    
+    if not note:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Note not found"
+        )
+    
+    # Verify ownership through location
+    location = await get_location_by_id(db=db, location_id=note.location_id)
+    if not location or location.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this note"
+        )
+    
+    # Update fields
+    note.name = note_data.name
+    note.content = note_data.content
+    
+    await db.commit()
+    await db.refresh(note)
+    
+    return NoteResponse.from_orm_note(note)
+
+
 @router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_note(
     note_id: str,
