@@ -23,6 +23,15 @@ router = APIRouter()
 
 # --- Schemas ---
 
+class LocationSummary(BaseModel):
+    """Minimal location info for collection responses."""
+    id: str
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class CollectionCreate(BaseModel):
     """Schema for creating a collection."""
     name: str
@@ -57,6 +66,7 @@ class CollectionResponse(BaseModel):
     is_public: bool
     created_at: datetime
     updated_at: Optional[datetime]
+    locations: List[LocationSummary] = []
 
     @classmethod
     def from_orm_collection(cls, collection: Collection) -> "CollectionResponse":
@@ -72,7 +82,11 @@ class CollectionResponse(BaseModel):
             is_archived=collection.is_archived,
             is_public=collection.is_public,
             created_at=collection.created_at,
-            updated_at=collection.updated_at
+            updated_at=collection.updated_at,
+            locations=[
+                LocationSummary(id=str(loc.id), name=loc.name)
+                for loc in (collection.locations or [])
+            ]
         )
 
     class Config:
