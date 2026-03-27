@@ -39,6 +39,19 @@ def _serialize_collaborator(user, owner_id=None, request_user=None):
     }
 
 
+class UserUUIDMixin:
+    """
+    Mixin for ModelSerializer subclasses whose `user` FK points at the custom
+    User model (integer PK).  Overrides the default PrimaryKeyRelatedField
+    serialization so that `user` is always returned as the user's UUID string,
+    consistent with every other identifier in the API.
+    """
+    user = serializers.SerializerMethodField()
+
+    def get_user(self, obj):
+        return str(obj.user.uuid)
+
+
 class ContentImageSerializer(CustomModelSerializer):
     class Meta:
         model = ContentImage
@@ -120,7 +133,7 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_num_locations(self, obj):
         return Location.objects.filter(category=obj, user=obj.user).count()
     
-class TrailSerializer(CustomModelSerializer):
+class TrailSerializer(UserUUIDMixin, CustomModelSerializer):
     provider = serializers.SerializerMethodField()
     wanderer_data = serializers.SerializerMethodField()
     wanderer_link = serializers.SerializerMethodField()
@@ -132,7 +145,7 @@ class TrailSerializer(CustomModelSerializer):
     class Meta:
         model = Trail
         fields = ['id', 'user', 'name', 'location', 'created_at','link','wanderer_id', 'provider', 'wanderer_data', 'wanderer_link']
-        read_only_fields = ['id', 'created_at', 'user', 'provider']
+        read_only_fields = ['id', 'created_at', 'provider']
 
     def _get_wanderer_integration(self, user):
         """Cache wanderer integration to avoid multiple database queries"""
@@ -195,7 +208,7 @@ class TrailSerializer(CustomModelSerializer):
         return f"{base_url}/trail/view/@{integration.username}/{obj.wanderer_id}"
             
     
-class ActivitySerializer(CustomModelSerializer):
+class ActivitySerializer(UserUUIDMixin, CustomModelSerializer):
     geojson = serializers.SerializerMethodField()
     
     class Meta:
@@ -207,7 +220,7 @@ class ActivitySerializer(CustomModelSerializer):
             'timezone', 'average_speed', 'max_speed', 'average_cadence', 'calories',
             'start_lat', 'start_lng', 'end_lat', 'end_lng', 'external_service_id', 'geojson'
         ]
-        read_only_fields = ['id', 'user']
+        read_only_fields = ['id']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -482,7 +495,7 @@ class MapPinSerializer(serializers.ModelSerializer):
     def get_is_visited(self, obj):
         return obj.is_visited_status()
 
-class TransportationSerializer(CustomModelSerializer):
+class TransportationSerializer(UserUUIDMixin, CustomModelSerializer):
     distance = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
@@ -498,7 +511,7 @@ class TransportationSerializer(CustomModelSerializer):
             'start_timezone', 'end_timezone', 'distance', 'images', 'attachments', 'start_code', 'end_code',
             'travel_duration_minutes'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user', 'distance', 'travel_duration_minutes']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'distance', 'travel_duration_minutes']
 
     def get_images(self, obj):
         serializer = ContentImageSerializer(obj.images.all(), many=True, context=self.context)
@@ -589,7 +602,7 @@ class TransportationSerializer(CustomModelSerializer):
             and dt_value.time().microsecond == 0
         )
 
-class LodgingSerializer(CustomModelSerializer):
+class LodgingSerializer(UserUUIDMixin, CustomModelSerializer):
     images = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
 
@@ -600,7 +613,7 @@ class LodgingSerializer(CustomModelSerializer):
             'reservation_number', 'price', 'price_currency', 'latitude', 'longitude', 'location', 'is_public',
             'collection', 'created_at', 'updated_at', 'type', 'timezone', 'images', 'attachments'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user']
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_images(self, obj):
         serializer = ContentImageSerializer(obj.images.all(), many=True, context=self.context)
@@ -612,7 +625,7 @@ class LodgingSerializer(CustomModelSerializer):
         # Filter out None values from the serialized data
         return [attachment for attachment in serializer.data if attachment is not None]
 
-class NoteSerializer(CustomModelSerializer):
+class NoteSerializer(UserUUIDMixin, CustomModelSerializer):
 
     class Meta:
         model = Note
@@ -620,17 +633,17 @@ class NoteSerializer(CustomModelSerializer):
             'id', 'user', 'name', 'content', 'date', 'links', 
             'is_public', 'collection', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user']
-    
-class ChecklistItemSerializer(CustomModelSerializer):
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class ChecklistItemSerializer(UserUUIDMixin, CustomModelSerializer):
         class Meta:
             model = ChecklistItem
             fields = [
                 'id', 'user', 'name', 'is_checked', 'checklist', 'created_at', 'updated_at'
             ]
-            read_only_fields = ['id', 'created_at', 'updated_at', 'user', 'checklist']
+            read_only_fields = ['id', 'created_at', 'updated_at', 'checklist']
   
-class ChecklistSerializer(CustomModelSerializer):
+class ChecklistSerializer(UserUUIDMixin, CustomModelSerializer):
     items = ChecklistItemSerializer(many=True, source='checklistitem_set')
     
     class Meta:
@@ -638,8 +651,8 @@ class ChecklistSerializer(CustomModelSerializer):
         fields = [
             'id', 'user', 'name', 'date', 'is_public', 'collection', 'created_at', 'updated_at', 'items'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user']
-    
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
     def create(self, validated_data):
         items_data = validated_data.pop('checklistitem_set')
         checklist = Checklist.objects.create(**validated_data)
