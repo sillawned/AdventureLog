@@ -69,9 +69,6 @@ class PublicUserListView(APIView):
     )
     def get(self, request):
         users = User.objects.filter(public_profile=True).exclude(id=request.user.id)
-        # remove the email addresses from the response
-        for user in users:
-            user.email = None
         serializer = PublicUserSerializer(users, many=True)
         # for every user, remove the field has_password
         for user in serializer.data:
@@ -96,12 +93,6 @@ class PublicUserDetailView(APIView):
         else:
             user = get_object_or_404(User, username=username, public_profile=True)
         serializer = PublicUserSerializer(user)
-        # for every user, remove the field has_password
-        serializer.data.pop('has_password', None)
-        
-        # remove the email address from the response
-        user.email = None
-        
         # Get the users adventures and collections to include in the response
         adventures = Location.objects.filter(user=user, is_public=True)
         collections = Collection.objects.filter(user=user, is_public=True)

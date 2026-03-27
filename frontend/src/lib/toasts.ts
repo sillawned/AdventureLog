@@ -1,8 +1,17 @@
 import { writable } from 'svelte/store';
 
-export const toasts = writable<{ type: any; message: any; id: number }[]>([]);
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
-export const addToast = (type: any, message: any, duration = 5000) => {
+export interface Toast {
+	type: ToastType;
+	message: string;
+	id: number;
+	duration: number;
+}
+
+export const toasts = writable<Toast[]>([]);
+
+export const addToast = (type: ToastType, message: string, duration = 5000) => {
 	const id = Date.now();
 	toasts.update((currentToasts) => {
 		return [...currentToasts, { type, message, id, duration }];

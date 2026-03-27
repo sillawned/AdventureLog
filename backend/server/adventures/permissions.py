@@ -1,5 +1,12 @@
 from rest_framework import permissions
 
+
+def _get_models():
+    """Lazy import to avoid circular dependency at module load time."""
+    from adventures.models import Trail, Activity, Visit, CollectionItineraryItem
+    return Trail, Activity, Visit, CollectionItineraryItem
+
+
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
     Owners can edit, others have read-only access.
@@ -116,25 +123,22 @@ class IsOwnerOrSharedWithFullAccess(permissions.BasePermission):
         user = request.user
         is_safe_method = request.method in permissions.SAFE_METHODS
 
-        # If the object has a location field, get that location and continue checking with that object, basically from the location's perspective. I am very proud of this line of code and that's why I am writing this comment.
+        # Resolve proxy objects to their underlying location so that the rest
+        # of the permission logic operates on a uniform object type.
+        Trail, Activity, Visit, CollectionItineraryItem = _get_models()
 
-        if type(obj).__name__ == 'Trail':
+        if isinstance(obj, Trail):
             obj = obj.location
 
-        if type(obj).__name__ == 'Activity':
-            # If the object is an Activity, get its location
+        if isinstance(obj, Activity):
             if hasattr(obj, 'visit') and hasattr(obj.visit, 'location'):
                 obj = obj.visit.location
 
-        
-        if type(obj).__name__ == 'Visit':
-            print("Checking permissions for Visit object", obj)
-            # If the object is a Visit, get its location
+        if isinstance(obj, Visit):
             if hasattr(obj, 'location'):
                 obj = obj.location
 
-        if type(obj).__name__ == 'CollectionItineraryItem':
-            print("Checking permissions for CollectionItineraryItem object", obj)
+        if isinstance(obj, CollectionItineraryItem):
             if hasattr(obj, 'object_id') and hasattr(obj, 'content_type'):
                 content_object = obj.content_type.get_object_for_this_type(id=obj.object_id)
                 obj = content_object
