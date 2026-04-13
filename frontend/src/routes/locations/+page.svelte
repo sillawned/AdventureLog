@@ -183,13 +183,8 @@
 		sidebarOpen = !sidebarOpen;
 	}
 
-	function getVisitedCount() {
-		return adventures.filter((a) => a.is_visited).length;
-	}
-
-	function getPlannedCount() {
-		return adventures.filter((a) => !a.is_visited).length;
-	}
+	$: visitedCount = adventures.filter((a) => a.is_visited).length;
+	$: plannedCount = adventures.filter((a) => !a.is_visited).length;
 </script>
 
 <svelte:head>
@@ -233,8 +228,8 @@
 									</h1>
 									<p class="text-sm text-base-content/60">
 										{count}
-										{$t('locations.locations')} • {getVisitedCount()}
-										{$t('adventures.visited')} • {getPlannedCount()}
+										{$t('locations.locations')} • {visitedCount}
+										{$t('adventures.visited')} • {plannedCount}
 										{$t('adventures.planned')}
 									</p>
 								</div>
@@ -249,14 +244,14 @@
 										<Eye class="w-5 h-5" />
 									</div>
 									<div class="stat-title text-xs">{$t('adventures.visited')}</div>
-									<div class="stat-value text-lg">{getVisitedCount()}</div>
+									<div class="stat-value text-lg">{visitedCount}</div>
 								</div>
 								<div class="stat py-2 px-4">
 									<div class="stat-figure text-secondary">
 										<Calendar class="w-5 h-5" />
 									</div>
 									<div class="stat-title text-xs">{$t('adventures.planned')}</div>
-									<div class="stat-value text-lg">{getPlannedCount()}</div>
+									<div class="stat-value text-lg">{plannedCount}</div>
 								</div>
 							</div>
 						</div>

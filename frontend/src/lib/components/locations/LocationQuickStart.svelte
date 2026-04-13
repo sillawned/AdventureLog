@@ -22,6 +22,7 @@
 	let isSearching = false;
 	let isReverseGeocoding = false;
 	let searchTimeout: ReturnType<typeof setTimeout>;
+	let searchAbortController: AbortController | null = null;
 	let mapComponent: any;
 	let selectedMarker: { lng: number; lat: number } | null = null;
 
@@ -41,10 +42,15 @@
 			return;
 		}
 
+		// Cancel any in-flight request before starting a new one
+		searchAbortController?.abort();
+		searchAbortController = new AbortController();
+
 		isSearching = true;
 		try {
 			const response = await fetch(
-				`/api/reverse-geocode/search/?query=${encodeURIComponent(query)}`
+				`/api/reverse-geocode/search/?query=${encodeURIComponent(query)}`,
+				{ signal: searchAbortController.signal }
 			);
 			const results = await response.json();
 
@@ -60,6 +66,7 @@
 				powered_by: result.powered_by
 			}));
 		} catch (error) {
+			if ((error as DOMException).name === 'AbortError') return; // superseded by newer request
 			console.error('Search error:', error);
 			searchResults = [];
 		} finally {

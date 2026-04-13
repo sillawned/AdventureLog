@@ -6,6 +6,7 @@ Reference:
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import ipaddress
 import os
 from dotenv import load_dotenv
 from os import getenv
@@ -31,14 +32,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = getenv('DEBUG', 'true').lower() == 'true'
+DEBUG = getenv('DEBUG', 'false').lower() == 'true'
 
-# ALLOWED_HOSTS = [
-#     'localhost',
-#     '127.0.0.1',
-#     'server'
-# ]
-ALLOWED_HOSTS = ['*']  # In production, restrict to known hosts.
+_allowed_hosts_env = getenv('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()] or ['localhost', '127.0.0.1']
 
 # ---------------------------------------------------------------------------
 # Installed Apps
@@ -101,7 +98,7 @@ MIDDLEWARE = (
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
-        'LOCATION': '127.0.0.1:11211',
+        'LOCATION': getenv('MEMCACHED_LOCATION', '127.0.0.1:11211'),
         'TIMEOUT': 60 * 60 * 24,  # Optional: 1 day cache
     }
 }
@@ -167,8 +164,12 @@ SESSION_COOKIE_SECURE = FRONTEND_URL.startswith('https')
 CSRF_COOKIE_SECURE = FRONTEND_URL.startswith('https')
 
 # Dynamically determine cookie domain to support subdomains while avoiding IPs
-hostname = urlparse(FRONTEND_URL).hostname
-is_ip_address = hostname.replace('.', '').isdigit()
+hostname = urlparse(FRONTEND_URL).hostname or ''
+try:
+    ipaddress.ip_address(hostname)
+    is_ip_address = True
+except ValueError:
+    is_ip_address = False
 is_single_label = '.' not in hostname  # single-label hostnames (e.g., "localhost")
 
 if is_ip_address or is_single_label:
@@ -261,7 +262,6 @@ AUTHENTICATION_BACKENDS = [
     # 'django.contrib.auth.backends.ModelBackend',
 ]
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 SITE_ID = 1
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
@@ -273,8 +273,11 @@ SOCIALACCOUNT_AUTO_SIGNUP = True  # Allow auto-signup post adapter checks
 
 FORCE_SOCIALACCOUNT_LOGIN = getenv('FORCE_SOCIALACCOUNT_LOGIN', 'false').lower() == 'true' # When true, only social login is allowed (no password login) and the login page will show only social providers or redirect directly to the first provider if only one is configured.
 
-if getenv('EMAIL_BACKEND', 'console') == 'console':
+# Default to dummy (silent discard) so unconfigured deployments don't leak emails to stdout.
+if getenv('EMAIL_BACKEND', 'dummy') == 'console':
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+elif getenv('EMAIL_BACKEND', 'dummy') == 'dummy':
+    EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = getenv('EMAIL_HOST')

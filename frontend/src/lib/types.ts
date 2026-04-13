@@ -237,7 +237,7 @@ export type Note = {
 	links: string[] | null;
 	date: string | null; // ISO 8601 date string
 	is_public: boolean;
-	collection: number | null;
+	collection: string | null;
 	created_at: string; // ISO 8601 date string
 	updated_at: string; // ISO 8601 date string
 };
@@ -249,7 +249,7 @@ export type Checklist = {
 	items: ChecklistItem[];
 	date: string | null; // ISO 8601 date string
 	is_public: boolean;
-	collection: number | null;
+	collection: string | null;
 	created_at: string; // ISO 8601 date string
 	updated_at: string; // ISO 8601 date string
 };
@@ -259,7 +259,7 @@ export type ChecklistItem = {
 	user: string;
 	name: string;
 	is_checked: boolean;
-	checklist: number;
+	checklist: string;
 	created_at: string; // ISO 8601 date string
 	updated_at: string; // ISO 8601 date string
 };

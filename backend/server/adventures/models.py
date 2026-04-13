@@ -139,14 +139,6 @@ class Visit(models.Model):
         if self.start_date > self.end_date:
             raise ValidationError('The start date must be before or equal to the end date.')
 
-    def delete(self, *args, **kwargs):
-        # Delete all associated images and attachments
-        for image in self.images.all():
-            image.delete()
-        for attachment in self.attachments.all():
-            attachment.delete()
-        super().delete(*args, **kwargs)
-
     def __str__(self):
         return f"{self.location.name} - {self.start_date} to {self.end_date}"
 
@@ -240,17 +232,9 @@ class Location(models.Model):
 
         return result
 
-    def delete(self, *args, **kwargs):
-        # Delete all associated images and attachments (handled by GenericRelation)
-        for image in self.images.all():
-            image.delete()
-        for attachment in self.attachments.all():
-            attachment.delete()
-        super().delete(*args, **kwargs)
-
     def __str__(self):
         return self.name
-    
+
 class CollectionInvite(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
     collection = models.ForeignKey('Collection', on_delete=models.CASCADE, related_name='invites')
@@ -347,14 +331,6 @@ class Transportation(models.Model):
             if self.user != self.collection.user:
                 raise ValidationError('Transportations must be associated with collections owned by the same user. Collection owner: ' + self.collection.user.username + ' Transportation owner: ' + self.user.username)
 
-    def delete(self, *args, **kwargs):
-        # Delete all associated images and attachments
-        for image in self.images.all():
-            image.delete()
-        for attachment in self.attachments.all():
-            attachment.delete()
-        super().delete(*args, **kwargs)
-
     def __str__(self):
         return self.name
 
@@ -381,17 +357,9 @@ class Note(models.Model):
             if self.user != self.collection.user:
                 raise ValidationError('Notes must be associated with collections owned by the same user. Collection owner: ' + self.collection.user.username + ' Note owner: ' + self.user.username)
 
-    def delete(self, *args, **kwargs):
-        # Delete all associated images and attachments
-        for image in self.images.all():
-            image.delete()
-        for attachment in self.attachments.all():
-            attachment.delete()
-        super().delete(*args, **kwargs)
-
     def __str__(self):
         return self.name
-    
+
 class Checklist(models.Model):
     # id = models.AutoField(primary_key=True)
     id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
@@ -426,7 +394,7 @@ class ChecklistItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        if self.checklist.is_public and not self.checklist.is_public:
+        if self.checklist.is_public and not self.is_public:
             raise ValidationError('Checklist items associated with a public checklist must be public. Checklist: ' + self.checklist.name + ' Checklist item: ' + self.name)
         if self.user != self.checklist.user:
             raise ValidationError('Checklist items must be associated with checklists owned by the same user. Checklist owner: ' + self.checklist.user.username + ' Checklist item owner: ' + self.user.username)
@@ -492,9 +460,9 @@ class ContentImage(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Remove file from disk when deleting image
-        if self.image and os.path.isfile(self.image.path):
-            os.remove(self.image.path)
+        # Remove file through Django's storage layer so the abstraction is honoured
+        if self.image:
+            self.image.delete(save=False)
         super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -521,8 +489,8 @@ class ContentAttachment(models.Model):
         ]
 
     def delete(self, *args, **kwargs):
-        if self.file and os.path.isfile(self.file.path):
-            os.remove(self.file.path)
+        if self.file:
+            self.file.delete(save=False)
         super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -585,17 +553,9 @@ class Lodging(models.Model):
             if self.user != self.collection.user:
                 raise ValidationError('Lodging must be associated with collections owned by the same user. Collection owner: ' + self.collection.user.username + ' Lodging owner: ' + self.user.username)
 
-    def delete(self, *args, **kwargs):
-        # Delete all associated images and attachments
-        for image in self.images.all():
-            image.delete()
-        for attachment in self.attachments.all():
-            attachment.delete()
-        super().delete(*args, **kwargs)
-
     def __str__(self):
         return self.name
-    
+
 class Trail(models.Model):
     """
     Represents a trail associated with a user.
