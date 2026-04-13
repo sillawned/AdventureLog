@@ -75,12 +75,32 @@ fi
 
 
 # Sync the countries and world travel regions
-# Sync the countries and world travel regions
-python manage.py download-countries
-if [ $? -eq 137 ]; then
-  >&2 echo "WARNING: The download-countries command was interrupted. This is likely due to lack of memory allocated to the container or the host. Please try again with more memory."
-  exit 1
-fi
+# Retry logic for download-countries (can fail with exit code 137 due to OOM)
+max_retries=3
+retry_count=0
+while [ $retry_count -lt $max_retries ]; do
+  >&2 echo "Downloading countries data (attempt $((retry_count + 1))/$max_retries)..."
+  python manage.py download-countries
+  exit_code=$?
+
+  if [ $exit_code -eq 0 ]; then
+    >&2 echo "Countries data downloaded successfully."
+    break
+  elif [ $exit_code -eq 137 ]; then
+    >&2 echo "WARNING: download-countries was interrupted (exit code 137). This is likely due to insufficient memory."
+    retry_count=$((retry_count + 1))
+    if [ $retry_count -lt $max_retries ]; then
+      >&2 echo "Retrying in 5 seconds... ($retry_count/$max_retries)"
+      sleep 5
+    else
+      >&2 echo "ERROR: download-countries failed after $max_retries attempts. Please allocate more memory to the container."
+      exit 1
+    fi
+  else
+    >&2 echo "ERROR: download-countries failed with exit code $exit_code"
+    exit 1
+  fi
+done
 
 cat /code/adventurelog.txt
 
