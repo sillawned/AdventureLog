@@ -1,51 +1,41 @@
-# Stage 1: Build stage with dependencies
+# Stage 1: Build stage — install Python dependencies
 FROM python:3.13-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+WORKDIR /code
+
+# Use uv for fast dependency installation
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Install Python dependencies
+COPY ./server/requirements.txt /code/
+RUN uv pip install --system --no-cache -r requirements.txt
+
+# Stage 2: Final image with runtime dependencies
+FROM python:3.13-slim
 
 # Metadata labels
 LABEL maintainer="Sean Morley" \
-      version="0.10.0" \
+      version="0.12.0" \
       description="AdventureLog — the ultimate self-hosted travel companion." \
       org.opencontainers.image.title="AdventureLog" \
       org.opencontainers.image.description="AdventureLog helps you plan, track, and share your adventures." \
-      org.opencontainers.image.version="0.10.0" \
+      org.opencontainers.image.version="0.12.0" \
       org.opencontainers.image.authors="Sean Morley" \
       org.opencontainers.image.source="https://github.com/seanmorley15/AdventureLog" \
       org.opencontainers.image.vendor="Sean Morley" \
       org.opencontainers.image.licenses="GPL-3.0"
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-WORKDIR /code
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install system dependencies needed for build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git \
-      postgresql-client \
-      gdal-bin \
-      libgdal-dev \
-      nginx \
-      memcached \
-      supervisor \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY ./server/requirements.txt /code/
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
-
-# Stage 2: Final image with runtime dependencies
-FROM python:3.13-slim
 WORKDIR /code
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install runtime dependencies (including GDAL)
+# Install runtime-only dependencies (no -dev packages)
 RUN apt-get update && apt-get install -y --no-install-recommends \
       postgresql-client \
       gdal-bin \
-      libgdal-dev \
       nginx \
       memcached \
       supervisor \
@@ -64,7 +54,7 @@ RUN chmod +x /code/entrypoint.sh \
     && mkdir -p /code/static /code/media
 
 # Collect static files
-RUN python3 manage.py collectstatic --noinput --verbosity 2
+RUN python3 manage.py collectstatic --noinput
 
 # Expose ports
 EXPOSE 80 8000

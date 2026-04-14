@@ -1,0 +1,12 @@
+# Virtual environments
+server/.venv/
+server/.env
+
+# Python bytecode
+**/__pycache__/
+**/*.py[cod]
+
+# Development files
+.devcontainer/
+.github/
+.gitignore
