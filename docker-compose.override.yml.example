@@ -1,0 +1,137 @@
+# ============================================================================
+# AdventureLog Docker Compose Override Configuration
+# ============================================================================
+#
+# This file demonstrates how to override Docker Compose settings for your
+# local development environment without modifying the base docker-compose.yml
+# or docker-compose.dev.yml files.
+#
+# To use this file:
+# 1. Copy it to docker-compose.override.yml
+# 2. Uncomment the sections you want to customize
+# 3. Run: docker-compose up
+#
+# Docker Compose automatically merges any docker-compose.override.yml file
+# with your main compose configuration, allowing you to customize settings
+# for your local environment while keeping the base files unchanged.
+#
+# See: https://docs.docker.com/compose/compose-file/#extension
+#
+# ============================================================================
+
+version: "3.9"
+
+services:
+  # ========================================================================
+  # Frontend Service Overrides
+  # ========================================================================
+
+  # Increase memory limit for Node.js development
+  # Uncomment if you get "JavaScript heap out of memory" errors
+  # web:
+  #   environment:
+  #     - NODE_OPTIONS=--max-old-space-size=8192  # Increase from default 4096
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2G  # Increase memory limit
+  #       reservations:
+  #         memory: 1G
+
+  # ========================================================================
+  # Database Service Overrides
+  # ========================================================================
+
+  # Increase PostgreSQL memory for better query performance
+  # Uncomment for improved performance on larger datasets
+  # db:
+  #   command:
+  #     - "postgres"
+  #     - "-c"
+  #     - "shared_buffers=256MB"
+  #     - "-c"
+  #     - "max_connections=200"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2G
+  #       reservations:
+  #         memory: 1G
+
+  # ========================================================================
+  # Backend Service Overrides
+  # ========================================================================
+
+  # Increase Gunicorn workers for better concurrency
+  # Uncomment to improve backend performance during development
+  # server:
+  #   command: >
+  #     sh -c "memcached -u nobody -m 128 -p 11211 -d;
+  #     until pg_isready -h db -p 5432 >/dev/null 2>&1; do sleep 1; done;
+  #     python manage.py migrate --noinput;
+  #     python manage.py shell -c \"from worldtravel.models import Country; import sys; sys.exit(0 if Country.objects.exists() else 1)\" || python manage.py download-countries;
+  #     if [ -n \"$$DJANGO_SUPERUSER_USERNAME\" ] && [ -n \"$$DJANGO_SUPERUSER_PASSWORD\" ] && [ -n \"$$DJANGO_SUPERUSER_EMAIL\" ]; then
+  #       python manage.py createsuperuser --noinput --username \"$$DJANGO_SUPERUSER_USERNAME\" --email \"$$DJANGO_SUPERUSER_EMAIL\" || true;
+  #     fi;
+  #     gunicorn worldtravel.wsgi -b 0.0.0.0:8000 --workers 4 --timeout 120"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2G
+  #       reservations:
+  #         memory: 512M
+
+  # ========================================================================
+  # Additional Service Examples
+  # ========================================================================
+
+  # Example: Add debugging with pgAdmin for database inspection
+  # Uncomment to add pgAdmin (database management UI) on port 5050
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: adventurelog-pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "5050:80"
+  #   depends_on:
+  #     - db
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+
+  # Example: Add Mailhog for email testing during development
+  # Uncomment to add Mailhog (local SMTP + web UI) on port 1025 (SMTP) and 8025 (Web UI)
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   container_name: adventurelog-mailhog
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1025:1025"  # SMTP
+  #     - "8025:8025"  # Web UI
+  #   environment:
+  #     MH_SMTP_BIND_ADDR: 0.0.0.0:1025
+  #     MH_UI_WEB_PATH: /
+
+  # Example: Add Redis for caching (alternative to Memcached)
+  # Uncomment to add Redis caching
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: adventurelog-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   command: redis-server --appendonly yes
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+
+# ============================================================================
+# Additional Volumes (uncomment if adding extra services)
+# ============================================================================
+# volumes:
+#   pgadmin_data:
