@@ -5,6 +5,7 @@ from integrations.views import IntegrationView, StravaIntegrationView, WandererI
 
 # Create the router and register the ViewSet
 router = DefaultRouter()
+router.trailing_slash = '/?'
 router.register(r'immich', ImmichIntegrationView, basename='immich')
 router.register(r'', IntegrationView, basename='integrations')
 router.register(r'immich', ImmichIntegrationViewSet, basename='immich_viewset')

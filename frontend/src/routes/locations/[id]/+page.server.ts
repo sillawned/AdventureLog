@@ -51,7 +51,7 @@ export const actions: Actions = {
 
 		let csrfToken = await fetchCSRFToken();
 
-		let res = await fetch(`${serverEndpoint}/api/locations/${event.params.id}`, {
+		let res = await fetch(`${serverEndpoint}/api/locations/${event.params.id}/`, {
 			method: 'DELETE',
 			headers: {
 				Referer: event.url.origin, // Include Referer header

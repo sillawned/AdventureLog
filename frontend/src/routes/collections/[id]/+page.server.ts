@@ -58,7 +58,7 @@ export const actions: Actions = {
 
 		let csrfToken = await fetchCSRFToken();
 
-		let res = await fetch(`${serverEndpoint}/api/collections/${event.params.id}`, {
+		let res = await fetch(`${serverEndpoint}/api/collections/${event.params.id}/`, {
 			method: 'DELETE',
 			headers: {
 				Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,

@@ -4,6 +4,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .views import CountryViewSet, RegionViewSet, VisitedRegionViewSet, regions_by_country, visits_by_country, cities_by_region, VisitedCityViewSet, visits_by_region, globespin
 router = DefaultRouter()
+router.trailing_slash = '/?'
 router.register(r'countries', CountryViewSet, basename='countries')
 router.register(r'regions', RegionViewSet, basename='regions')
 router.register(r'visitedregion', VisitedRegionViewSet, basename='visitedregion')

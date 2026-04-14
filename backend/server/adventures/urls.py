@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from adventures.views import *
 
 router = DefaultRouter()
+router.trailing_slash = '/?'
 router.register(r'locations', LocationViewSet, basename='locations')
 router.register(r'collections', CollectionViewSet, basename='collections')
 router.register(r'stats', StatsViewSet, basename='stats')
